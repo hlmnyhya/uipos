@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:uipos2/bluetooth_screen.dart';
 import 'package:uipos2/landing_page.dart';
 import 'package:uipos2/mainmenu/home_screen.dart';
-import 'package:bluetooth_print/bluetooth_print.dart';
 
 void main() {
   runApp(MyApp());

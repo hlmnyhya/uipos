@@ -12,7 +12,8 @@ import 'package:uipos2/transaction/transaction_screen.dart';
 class OrderDetailScreen extends StatefulWidget {
   final int idTempTrans;
 
-  const OrderDetailScreen({super.key, required this.idTempTrans});
+  const OrderDetailScreen({Key? key, required this.idTempTrans})
+      : super(key: key);
 
   @override
   // ignore: library_private_types_in_public_api
@@ -20,12 +21,12 @@ class OrderDetailScreen extends StatefulWidget {
 }
 
 class _OrderDetailScreenState extends State<OrderDetailScreen> {
-  int? qty;
-  int? harga;
-  int? stok;
-  String? invoice;
-  String? date;
-  String? nama;
+  int? qty = 0;
+  int? harga = 0;
+  int? stok = 0;
+  String? id_customer = "";
+  String? createdAt = "";
+  String? nama = "";
 
   List<dynamic> productList = [];
 
@@ -36,7 +37,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   }
 
   Future<void> fetchData() async {
-    const apiUrl = "http://localhost:3000/temptransaksi/1";
+    const apiUrl = "https://api.couplemoment.com/temptransaksi";
     final response = await http.get(Uri.parse(apiUrl));
     final data = json.decode(response.body);
 
@@ -48,9 +49,10 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
 
     if (tempTransData != null) {
       setState(() {
-        invoice = tempTransData['invoice'].toString();
+        id_customer = tempTransData['id_customer'].toString();
         qty = tempTransData['qty'];
-        date = tempTransData['date'];
+        nama = tempTransData['nama'];
+        createdAt = tempTransData['createdAt'];
         productList = tempTransData[
             'products']; // Perbarui productList dengan data produk
       });
@@ -136,7 +138,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                           ),
                           SizedBox(height: 5.0),
                           Text(
-                            'Invoice: ${invoice?.toString() ?? ''}',
+                            'ID Customer: ${id_customer?.toString() ?? ''}',
                             style: TextStyle(
                               fontFamily: 'Poppins',
                               fontSize: 16.0,
@@ -152,7 +154,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                           ),
                           SizedBox(height: 5.0),
                           Text(
-                            'Date: ${date != null ? DateTime.parse(date!).toString() : ''}',
+                            'Date: ${createdAt?.toString() ?? ''}',
                             style: TextStyle(
                               fontFamily: 'Poppins',
                               fontSize: 16.0,
@@ -179,7 +181,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
               elevation: 2.0,
               child: ListTile(
                 title: Text(
-                  'Nama: ${nama ?? ''}',
+                  'Produk: ${nama ?? ''}',
                   style: TextStyle(
                     fontFamily: 'Poppins',
                     fontSize: 16.0,

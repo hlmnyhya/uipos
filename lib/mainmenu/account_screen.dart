@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:uipos2/bluetooth_screen.dart';
 import 'package:uipos2/signin_screen.dart';
 import 'package:uipos2/landing_page.dart';
 import 'package:uipos2/signup_screen.dart';
@@ -118,13 +117,7 @@ class _AccountScreenState extends State<AccountScreen> {
               ),
               SizedBox(height: 10),
               ElevatedButton(
-                onPressed: () {
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(builder: (context) => BluetoothScreen()),
-                    (Route<dynamic> route) => false,
-                  );
-                },
+                onPressed: () {},
                 child: Text(
                   'Connect to Bluetooth',
                   style: TextStyle(fontFamily: 'Poppins'),

@@ -134,7 +134,7 @@ class _OrderScreenState extends State<OrderScreen> {
                                   ),
                                   SizedBox(height: 4.0),
                                   Text(
-                                    'Invoice: ${temptrans['invoice']}',
+                                    'ID Customer: ${temptrans['id_customer']}',
                                     style: TextStyle(
                                       color: Colors.black,
                                       fontFamily: 'Poppins',
@@ -150,7 +150,7 @@ class _OrderScreenState extends State<OrderScreen> {
                                   ),
                                   SizedBox(height: 4.0),
                                   Text(
-                                    'Date: ${temptrans['date']}',
+                                    'Date: ${temptrans['createdAt']}',
                                     style: TextStyle(
                                       color: Colors.black,
                                       fontFamily: 'Poppins',

@@ -1,31 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:uipos2/bluetooth_screen.dart';
 import 'package:uipos2/cappbar.dart';
 import 'package:uipos2/mainmenu/home_screen.dart';
 import 'package:uipos2/mainmenu/menu_screen.dart';
 import 'package:uipos2/mainmenu/payment_screen.dart';
 import 'package:uipos2/mainmenu/order_screen.dart';
 import 'package:uipos2/mainmenu/account_screen.dart';
-import 'package:uipos2/mainmenu/edit_account_screen.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 class TransactionScreen extends StatefulWidget {
   const TransactionScreen({Key? key}) : super(key: key);
 
-  Object? get idTempTrans => null;
   @override
   State<TransactionScreen> createState() => _TransactionScreenState();
 }
 
 class _TransactionScreenState extends State<TransactionScreen> {
-  int? qty;
-  int? harga;
-  int? stok;
-  String? invoice;
-  String? date;
-  String? nama;
-
   List<dynamic> productList = [];
 
   @override
@@ -34,37 +24,21 @@ class _TransactionScreenState extends State<TransactionScreen> {
     fetchDataTransaksi();
   }
 
-  Future<List<dynamic>> fetchDataTransaksi() async {
-    const apiUrl = "http://localhost:3000/transaksi/1";
+  Future<void> fetchDataTransaksi() async {
+    final apiUrl =
+        "https://api.couplemoment.com/temptransaksi"; // Updated API URL
     final response = await http.get(Uri.parse(apiUrl));
-    final data = json.decode(response.body);
 
-    final List<dynamic> tempTransDataList = data['data'];
-    final tempTransData = tempTransDataList.firstWhere(
-      (tempTrans) => tempTrans['id_temp_trans'] == widget.idTempTrans,
-      orElse: () => null,
-    );
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
 
-    if (tempTransData != null) {
       setState(() {
-        invoice = tempTransData['invoice'].toString();
-        qty = tempTransData['qty'];
-        date = tempTransData['date'];
-        productList = tempTransData['products'];
+        productList = data['data']['products'];
       });
     }
-
-    return productList; // Return the productList as a List<dynamic>
   }
 
   int _selectedIndex = 3;
-
-  Future<Widget> get child async => GridView.count(
-        crossAxisCount: 2,
-        children: <Widget>[
-          // your grid view items
-        ],
-      );
 
   void _onItemTapped(int index) {
     if (index == 0) {
@@ -186,50 +160,19 @@ class _TransactionScreenState extends State<TransactionScreen> {
                             ),
                           ),
                         ],
-                        rows: [
-                          DataRow(cells: [
-                            DataCell(Text('Sweet Sugar Caramel')),
-                            DataCell(Text('1x')),
-                            DataCell(Text(15000.toInt().toString())),
-                          ]),
-                          DataRow(cells: [
-                            DataCell(Text('Coffee Latte')),
-                            DataCell(Text('1x')),
-                            DataCell(Text(15000.toInt().toString())),
-                          ]),
-                          DataRow(cells: [
-                            DataCell(Text('Coffee Latte')),
-                            DataCell(Text('1x')),
-                            DataCell(Text(15000.toInt().toString())),
-                          ]),
-                          DataRow(cells: [
-                            DataCell(
-                              Text('Total',
-                                  style:
-                                      TextStyle(fontWeight: FontWeight.bold)),
-                            ),
-                            DataCell(Text('')),
-                            DataCell(Text(15000.toInt().toString())),
-                          ]),
-                          DataRow(cells: [
-                            DataCell(
-                              Text('Bayar',
-                                  style:
-                                      TextStyle(fontWeight: FontWeight.bold)),
-                            ),
-                            DataCell(Text('')),
-                            DataCell(Text(15000.toInt().toString())),
-                          ]),
-                          DataRow(cells: [
-                            DataCell(
-                              Text('Kembali',
-                                  style:
-                                      TextStyle(fontWeight: FontWeight.bold)),
-                            ),
-                            DataCell(Text('')),
-                            DataCell(Text(15000.toInt().toString())),
-                          ]),
-                        ],
+                        rows: productList.map<DataRow>((product) {
+                          final name = product['nama'];
+                          final qty = product['qty'];
+                          final price = product['harga'];
+
+                          print('Name: $name, Qty: $qty, Price: $price');
+
+                          return DataRow(cells: [
+                            DataCell(Text(name)),
+                            DataCell(Text('${qty}x')),
+                            DataCell(Text(price.toInt().toString())),
+                          ]);
+                        }).toList(),
                       ),
                     ),
                     SizedBox(height: 20),

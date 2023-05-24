@@ -22,7 +22,7 @@ class _DetailScreenState extends State<DetailScreen> {
   int _selectedIndex = 1;
 
   Future<void> deleteMenu(String idProduct) async {
-    final url = Uri.parse('http://localhost:3000/product/$idProduct');
+    final url = Uri.parse('https://api.couplemoment.com/product/$idProduct');
 
     final response = await http.delete(url);
 
@@ -84,146 +84,167 @@ class _DetailScreenState extends State<DetailScreen> {
         breadcrumbItem: 'Menu',
         breadcrumbItem2: 'Detail Menu',
       ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(height: 16),
-          Padding(
-            padding: EdgeInsets.all(20),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: Container(
-                width: MediaQuery.of(context).size.width,
-                height: MediaQuery.of(context).size.height * 0.4,
-                child: Image.network(
-                  "https://reqres.in/img/faces/3-image.jpg",
-                  fit: BoxFit.cover,
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(height: 16),
+            Padding(
+              padding: EdgeInsets.all(20),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: Container(
+                  width: MediaQuery.of(context).size.width,
+                  height: MediaQuery.of(context).size.height * 0.4,
+                  child: Image.network(
+                    "https://reqres.in/img/faces/3-image.jpg",
+                    fit: BoxFit.cover,
+                  ),
                 ),
               ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  widget.product['nama'],
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                SizedBox(height: 8),
-                Text(
-                  widget.product['deskripsi'],
-                  style: TextStyle(fontSize: 16),
-                ),
-                SizedBox(height: 8),
-                Text(
-                  'Price : Rp. ${widget.product['harga']},-',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Spacer(),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.pushAndRemoveUntil(
-                      context,
-                      MaterialPageRoute(builder: (context) => MenuScreenEdit()),
-                      (Route<dynamic> route) => false,
-                    );
-                  },
-                  icon: Icon(
-                    Icons.edit,
-                    size: 20,
-                  ),
-                  label: Text(
-                    'Edit Menu',
-                    style: TextStyle(fontFamily: 'Poppins'),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-                    minimumSize: Size(170, 50),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30.0),
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.product['nama'],
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
                     ),
-                    backgroundColor: Color.fromARGB(188, 209, 0, 0),
-                    fixedSize: Size(170, 50),
                   ),
-                ),
-                SizedBox(width: 16),
-                ElevatedButton.icon(
-                  onPressed: () {
-                    showDialog(
-                      context: context,
-                      builder: (BuildContext context) {
-                        return AlertDialog(
-                          title: const Text('Confirmation'),
-                          content: const Text(
-                              'Are you sure you want to delete this menu?'),
-                          actions: <Widget>[
-                            TextButton(
-                              onPressed: () async {
-                                // Panggil fungsi untuk menghapus data
-                                await deleteMenu(widget.product['id_product']);
-
-                                // Tutup dialog konfirmasi
-                                Navigator.of(context).pop();
-
-                                // Kembali ke halaman MenuScreen setelah menghapus
-                                Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) => MenuScreen()),
-                                );
-                              },
-                              child: const Text('Delete'),
-                            ),
-                            TextButton(
-                              onPressed: () {
-                                // Tutup dialog konfirmasi
-                                Navigator.of(context).pop();
-                              },
-                              child: const Text('Cancel'),
-                            ),
-                          ],
-                        );
-                      },
-                    );
-                  },
-                  icon: Icon(
-                    Icons.delete_forever,
-                    size: 20,
+                  SizedBox(height: 8),
+                  Text(
+                    widget.product['deskripsi'],
+                    style: TextStyle(fontSize: 16),
                   ),
-                  label: Text(
-                    'Delete Menu',
-                    style: TextStyle(fontFamily: 'Poppins'),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-                    minimumSize: Size(170, 50),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30.0),
+                  SizedBox(height: 8),
+                  Text(
+                    'Price : Rp. ${widget.product['harga']},-'.toString(),
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
                     ),
-                    backgroundColor: Color.fromARGB(188, 209, 0, 0),
-                    fixedSize: Size(170, 50),
                   ),
-                ),
-              ],
+                  Text(
+                    'Stok : ${widget.product['stok']}'.toString(),
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+            SizedBox(height: 16),
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => MenuScreenEdit(
+                            idProduct: widget.product['id_product'].toString(),
+                          ),
+                        ),
+                      );
+                    },
+                    icon: Icon(
+                      Icons.edit,
+                      size: 20,
+                    ),
+                    label: Text(
+                      'Edit Menu',
+                      style: TextStyle(fontFamily: 'Poppins'),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      padding:
+                          EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+                      minimumSize: Size(170, 50),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30.0),
+                      ),
+                      backgroundColor: Color.fromARGB(188, 209, 0, 0),
+                      fixedSize: Size(170, 50),
+                    ),
+                  ),
+                  SizedBox(width: 16),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return AlertDialog(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            title: const Text('Confirmation'),
+                            content: const Text(
+                                'Are you sure you want to delete this menu?'),
+                            actions: <Widget>[
+                              TextButton(
+                                onPressed: () async {
+                                  // Panggil fungsi untuk menghapus data
+                                  await deleteMenu(
+                                      widget.product['id_product']);
+
+                                  // Tutup dialog konfirmasi
+                                  Navigator.of(context).pop();
+
+                                  // Kembali ke halaman MenuScreen setelah menghapus
+                                  Navigator.pushReplacement(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) => MenuScreen()),
+                                  );
+                                },
+                                child: const Text('Delete',
+                                    style: TextStyle(color: Colors.red)),
+                              ),
+                              TextButton(
+                                onPressed: () {
+                                  // Tutup dialog konfirmasi
+                                  Navigator.of(context).pop();
+                                },
+                                child: const Text('Cancel',
+                                    style: TextStyle(color: Colors.red)),
+                              ),
+                            ],
+                          );
+                        },
+                      );
+                    },
+                    icon: Icon(
+                      Icons.delete_forever,
+                      size: 20,
+                    ),
+                    label: Text(
+                      'Delete Menu',
+                      style: TextStyle(fontFamily: 'Poppins'),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      padding:
+                          EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+                      minimumSize: Size(170, 50),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30.0),
+                      ),
+                      backgroundColor: Color.fromARGB(188, 209, 0, 0),
+                      fixedSize: Size(170, 50),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 16),
+          ],
+        ),
       ),
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
@@ -256,20 +277,6 @@ class _DetailScreenState extends State<DetailScreen> {
         ],
         currentIndex: _selectedIndex,
         selectedItemColor: Color.fromARGB(188, 209, 0, 0),
-        unselectedItemColor: Colors.grey,
-        showUnselectedLabels: true,
-        selectedFontSize: 13.0,
-        unselectedFontSize: 13.0,
-        selectedLabelStyle: TextStyle(
-          fontFamily: 'Poppins',
-          fontSize: 16.0,
-          fontWeight: FontWeight.bold,
-        ),
-        unselectedLabelStyle: TextStyle(
-          fontFamily: 'Poppins',
-          fontSize: 14.0,
-          fontWeight: FontWeight.normal,
-        ),
         onTap: _onItemTapped,
       ),
     );
