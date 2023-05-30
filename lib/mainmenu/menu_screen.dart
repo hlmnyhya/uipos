@@ -22,17 +22,18 @@ class MenuScreen extends StatefulWidget {
 
 class _MenuScreenState extends State<MenuScreen> {
   List<Map<String, dynamic>> _cartItems = [];
-  final String apiUrl = "https://api.couplemoment.com/product";
+  int? productId;
+  String? productName;
+  String? productPrice;
+  String? productImage;
+  String? productDescription;
+  String? productStock;
+  Map<String, dynamic>? cartproduct;
 
-  Future<List<dynamic>> _fetchdataproduct() async {
-    var result = await http.get(Uri.parse(apiUrl));
-    return json.decode(result.body)['data'];
-  }
-
-  void _addToCart(Map<String, dynamic> product) {
-    setState(() {
-      _cartItems.add(product);
-    });
+  Future<List<Map<String, dynamic>>> _fetchdataproduct() async {
+    var result = await http.get(Uri.parse('http://192.168.1.8:3000/product'));
+    var data = json.decode(result.body)['data'];
+    return List<Map<String, dynamic>>.from(data);
   }
 
   int _selectedIndex = 1;
@@ -68,10 +69,47 @@ class _MenuScreenState extends State<MenuScreen> {
   }
 
   void _navigateToDetailScreen(Map<String, dynamic> product) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => DetailScreen(product: product)),
-    );
+    if (product['stok'] > 0) {
+      productId = product['id_product'];
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => DetailScreen(product: product)),
+      );
+    } else {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            title: Text(
+              'Out of Stock',
+              style: TextStyle(
+                color: Colors.black,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'Poppins',
+              ),
+            ),
+            content: Text('This product is currently out of stock.'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                child: Text(
+                  'OK',
+                  style: TextStyle(
+                    color: Colors.red,
+                    fontFamily: 'Poppins',
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      );
+    }
   }
 
   @override
@@ -85,17 +123,18 @@ class _MenuScreenState extends State<MenuScreen> {
       body: Column(
         children: [
           Expanded(
-            child: FutureBuilder<List<dynamic>>(
+            child: FutureBuilder<List<Map<String, dynamic>>>(
               future: _fetchdataproduct(),
-              builder: (BuildContext context, AsyncSnapshot snapshot) {
+              builder: (BuildContext context,
+                  AsyncSnapshot<List<Map<String, dynamic>>> snapshot) {
                 if (snapshot.hasData) {
                   return GridView.count(
                     crossAxisCount: 2,
                     crossAxisSpacing: 20,
                     mainAxisSpacing: 20,
                     padding: EdgeInsets.all(20),
-                    children: List.generate(snapshot.data.length, (index) {
-                      final product = snapshot.data[index];
+                    children: List.generate(snapshot.data!.length, (index) {
+                      final product = snapshot.data![index];
                       int qty = 0;
 
                       return GestureDetector(
@@ -128,7 +167,10 @@ class _MenuScreenState extends State<MenuScreen> {
         children: [
           FloatingActionButton(
             onPressed: () {
-              // Tambahkan kode aksi untuk tombol shopping cart_checkout di sini
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => OrderScreen()),
+              ); // Tambahkan kode aksi untuk tombol shopping cart_checkout di sini
             },
             child: Icon(Icons.shopping_cart_checkout),
             backgroundColor: Color.fromARGB(255, 228, 171, 0),
@@ -198,6 +240,8 @@ class _MenuScreenState extends State<MenuScreen> {
 }
 
 Widget buildProductCard(dynamic product, int qty, BuildContext context) {
+  var cartproduct;
+  bool isOutOfStock = product['stok'] == 0;
   return Container(
     decoration: BoxDecoration(
       borderRadius: BorderRadius.circular(10),
@@ -219,10 +263,10 @@ Widget buildProductCard(dynamic product, int qty, BuildContext context) {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(10),
                 child: Image.network(
-                  'https://reqres.in/img/faces/7-image.jpg',
+                  product['gambar'] ??
+                      'https://www.generationsforpeace.org/wp-content/uploads/2018/03/empty.jpg',
                   fit: BoxFit.cover,
                   width: double.infinity,
-                  height: double.infinity,
                 ),
               ),
             ),
@@ -261,10 +305,13 @@ Widget buildProductCard(dynamic product, int qty, BuildContext context) {
                   ),
                   SizedBox(height: 5),
                   Text(
-                    'Stok : ${product['stok']}',
+                    isOutOfStock ? 'Out of Stock' : 'Stok: ${product['stok']}',
                     style: TextStyle(
-                      color: Color.fromARGB(255, 35, 35, 35),
+                      color: isOutOfStock
+                          ? Colors.red
+                          : Color.fromARGB(255, 35, 35, 35),
                       fontSize: 12,
+                      fontWeight: FontWeight.bold,
                       fontFamily: 'Poppins',
                     ),
                   ),
@@ -273,35 +320,38 @@ Widget buildProductCard(dynamic product, int qty, BuildContext context) {
             ),
           ],
         ),
-        Positioned(
-          top: 120,
-          right: 6,
-          child: CircleAvatar(
-            backgroundColor: Colors.red,
-            radius: 20,
-            child: IconButton(
-              onPressed: () {
-                showDialog(
-                  context: context,
-                  builder: (BuildContext context) {
-                    return AddToCartDialog(
-                      product: product,
-                      qty: qty,
-                      onAddToCart: () {
-                        // Add to cart logic here
-                        Navigator.pop(context); // Close the dialog
-                      },
-                    );
-                  },
-                );
-              },
-              icon: Icon(Icons.add, size: 15),
-              color: Colors.white,
-              padding: EdgeInsets.all(5),
-              splashRadius: 20,
+        if (!isOutOfStock)
+          Positioned(
+            top: 120,
+            right: 6,
+            child: CircleAvatar(
+              backgroundColor: Colors.red,
+              radius: 20,
+              child: IconButton(
+                onPressed: () {
+                  cartproduct = product;
+                  // print(cartproduct);
+                  showDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return AddToCartDialog(
+                        product: product,
+                        qty: qty,
+                        onAddToCart: () {
+                          // Add to cart logic here
+                          Navigator.pop(context); // Close the dialog
+                        },
+                      );
+                    },
+                  );
+                },
+                icon: Icon(Icons.add, size: 15),
+                color: Colors.white,
+                padding: EdgeInsets.all(5),
+                splashRadius: 20,
+              ),
             ),
           ),
-        ),
       ],
     ),
   );
@@ -310,11 +360,13 @@ Widget buildProductCard(dynamic product, int qty, BuildContext context) {
 class AddToCartDialog extends StatefulWidget {
   final dynamic product;
   final int qty;
-  final VoidCallback onAddToCart;
+  final String? productId;
+  final Function() onAddToCart;
 
   const AddToCartDialog({
     required this.product,
     required this.qty,
+    this.productId,
     required this.onAddToCart,
   });
 
@@ -323,12 +375,107 @@ class AddToCartDialog extends StatefulWidget {
 }
 
 class _AddToCartDialogState extends State<AddToCartDialog> {
-  int qty = 0;
+  late int qty;
 
   @override
   void initState() {
     super.initState();
     qty = widget.qty;
+  }
+
+  Future<void> _addToCart() async {
+    try {
+      // Create a request data object
+      Map<String, dynamic> requestData = {
+        'id_temp_trans': widget.product['id_temp_trans'],
+        'id_product': widget.product['id_product'],
+        'qty': qty,
+        'nama': widget.product['nama'],
+        'harga': widget.product['harga'],
+      };
+
+      // Convert requestData to JSON
+      String requestDataJson = jsonEncode(requestData);
+
+      // Print the requestData in JSON format
+      print('Request Data: $requestDataJson');
+
+      // Make an HTTP POST request to the API
+      var response = await http.post(
+        Uri.parse('http://192.168.1.8:3000/temptransaksi/add'),
+        // Replace with the appropriate API URL
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: requestDataJson,
+      );
+
+      // Check the response status code
+      if (response.statusCode == 200) {
+        // Successfully added to temptransaksi, perform additional actions if needed
+        print('Data added to temptransaksi successfully');
+
+        // Insert data into the transaksi table
+        var transaksiData = {
+          'total':
+              0, // Set the initial total to 0 or calculate it based on the added products
+          'bayar': 0, // Set the initial bayar value to 0 or update it later
+          'kembali': 0, // Set the initial kembali value to 0 or update it later
+        };
+
+        var transaksiResponse = await http.post(
+          Uri.parse('http://192.168.1.8:3000/transaksi/add'),
+          // Replace with the appropriate API URL
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: jsonEncode(transaksiData),
+        );
+
+        if (transaksiResponse.statusCode == 200) {
+          // Successfully added to the transaksi table
+          var transaksiId =
+              jsonDecode(transaksiResponse.body)['data']['id_transaksi'];
+          print('Data added to transaksi successfully with ID: $transaksiId');
+
+          // Insert data into the customer table
+          var customerData = {
+            'nama': '', // Set the appropriate customer name
+            'kode_customer': '', // Set the appropriate customer code
+          };
+
+          var customerResponse = await http.post(
+            Uri.parse('http://192.168.1.8:3000/customer/add'),
+            // Replace with the appropriate API URL
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: jsonEncode(customerData),
+          );
+
+          if (customerResponse.statusCode == 200) {
+            // Successfully added to the customer table
+            var customerId =
+                jsonDecode(customerResponse.body)['data']['id_customer'];
+            print('Data added to customer successfully with ID: $customerId');
+            widget.onAddToCart(); // Call the onAddToCart function
+            // Close the dialog
+          } else {
+            // Failed to add to the customer table, handle the error if needed
+            print('Failed to add data to customer');
+          }
+        } else {
+          // Failed to add to the transaksi table, handle the error if needed
+          print('Failed to add data to transaksi');
+        }
+      } else {
+        // Failed to add to temptransaksi, handle the error if needed
+        print('Failed to add data to temptransaksi');
+      }
+    } catch (e) {
+      // Handle connection errors or any other exceptions
+      print('Error: $e');
+    }
   }
 
   @override
@@ -338,7 +485,7 @@ class _AddToCartDialogState extends State<AddToCartDialog> {
         'Add to Cart',
         style: TextStyle(
           fontSize: 20,
-          fontWeight: FontWeight.w500,
+          fontWeight: FontWeight.bold,
           color: Colors.black,
           fontFamily: 'Poppins',
         ),
@@ -346,6 +493,23 @@ class _AddToCartDialogState extends State<AddToCartDialog> {
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          Text(
+            widget.product['nama'],
+            style: TextStyle(
+              color: Color.fromARGB(255, 35, 35, 35),
+              fontSize: 14,
+              fontFamily: 'Poppins',
+            ),
+          ),
+          SizedBox(height: 4),
+          Text(
+            'Rp. ${(widget.product['harga'] * qty).toString()},-',
+            style: TextStyle(
+              color: Color.fromARGB(255, 35, 35, 35),
+              fontSize: 14,
+              fontFamily: 'Poppins',
+            ),
+          ),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -361,7 +525,9 @@ class _AddToCartDialogState extends State<AddToCartDialog> {
                 color: Colors.black,
               ),
               Text(
-                qty.toString(),
+                widget.product['stok'] - qty > 0
+                    ? 'Qty: $qty'
+                    : 'Max Qty: ${widget.product['stok']}',
                 style: TextStyle(
                   color: Color.fromARGB(255, 35, 35, 35),
                   fontSize: 14,
@@ -384,9 +550,7 @@ class _AddToCartDialogState extends State<AddToCartDialog> {
           ),
           SizedBox(height: 16),
           ElevatedButton(
-            onPressed: () {
-              widget.onAddToCart();
-            },
+            onPressed: _addToCart,
             style: ElevatedButton.styleFrom(
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(30.0),

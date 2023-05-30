@@ -1,10 +1,19 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'package:image_picker/image_picker.dart';
-import 'package:uipos2/cappbar.dart';
 import 'dart:io';
+import 'package:uipos2/signin_screen.dart';
+import 'package:uipos2/landing_page.dart';
+import 'package:uipos2/signup_screen.dart';
+import 'package:uipos2/cappbar.dart';
+import 'package:uipos2/mainmenu/home_screen.dart';
 import 'package:uipos2/mainmenu/menu_screen.dart';
+import 'package:uipos2/mainmenu/payment_screen.dart';
+import 'package:uipos2/mainmenu/order_screen.dart';
+import 'package:uipos2/mainmenu/account_screen.dart';
+import 'package:uipos2/menu/menu_add_screen.dart';
+import 'package:uipos2/menu/menu_detail_screen.dart';
 
 class MenuScreenAdd extends StatefulWidget {
   const MenuScreenAdd({Key? key}) : super(key: key);
@@ -47,7 +56,8 @@ class _MenuScreenStateAdd extends State<MenuScreenAdd> {
 
       // Send the JSON data as the request body
       final response = await http.post(
-        Uri.parse('_fetchdataproductadd'),
+        Uri.parse(
+            'http://192.168.1.8:3000/product/add'), // Replace with your API endpoint
         headers: {'Content-Type': 'application/json'},
         body: jsonData,
       );
@@ -78,10 +88,6 @@ class _MenuScreenStateAdd extends State<MenuScreenAdd> {
                     TextButton(
                       onPressed: () {
                         Navigator.of(context).pop();
-                        Navigator.of(context).pushAndRemoveUntil(
-                          MaterialPageRoute(builder: (context) => MenuScreen()),
-                          (Route<dynamic> route) => false,
-                        );
                       },
                       child: Text(
                         'OK',
@@ -148,6 +154,16 @@ class _MenuScreenStateAdd extends State<MenuScreenAdd> {
     }
   }
 
+  Future<void> _getImage() async {
+    final picker = ImagePicker();
+    final pickedImage = await picker.pickImage(source: ImageSource.gallery);
+    if (pickedImage != null) {
+      setState(() {
+        _image = pickedImage;
+      });
+    }
+  }
+
   Future<void> _pickImage(ImageSource source) async {
     final picker = ImagePicker();
     final pickedImage = await picker.pickImage(source: source);
@@ -158,6 +174,38 @@ class _MenuScreenStateAdd extends State<MenuScreenAdd> {
     }
   }
 
+  int _selectedIndex = 1;
+
+  void _onItemTapped(int index) {
+    if (index == 0) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => HomeScreen()),
+      );
+    } else if (index == 1) {
+      // Stay on MenuScreen
+    } else if (index == 2) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => PaymentScreen()),
+      );
+    } else if (index == 3) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => OrderScreen()),
+      );
+    } else if (index == 4) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => AccountScreen()),
+      );
+    }
+
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -166,14 +214,14 @@ class _MenuScreenStateAdd extends State<MenuScreenAdd> {
         breadcrumbItem: 'Menu',
         breadcrumbItem2: 'Add Menu',
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(30.0),
-        child: SingleChildScrollView(
-          // Add SingleChildScrollView
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
           child: Form(
             key: _formKey,
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 TextFormField(
                   controller: _nameController,
@@ -214,7 +262,7 @@ class _MenuScreenStateAdd extends State<MenuScreenAdd> {
                     return null;
                   },
                 ),
-                SizedBox(height: 16),
+                SizedBox(height: 16.0),
                 TextFormField(
                   controller: _descriptionController,
                   keyboardType: TextInputType.text,
@@ -254,7 +302,7 @@ class _MenuScreenStateAdd extends State<MenuScreenAdd> {
                     return null;
                   },
                 ),
-                SizedBox(height: 16),
+                SizedBox(height: 16.0),
                 TextFormField(
                   controller: _priceController,
                   keyboardType: TextInputType.number,
@@ -294,7 +342,7 @@ class _MenuScreenStateAdd extends State<MenuScreenAdd> {
                     return null;
                   },
                 ),
-                SizedBox(height: 16),
+                SizedBox(height: 16.0),
                 TextFormField(
                   controller: _stockController,
                   keyboardType: TextInputType.number,
@@ -396,10 +444,9 @@ class _MenuScreenStateAdd extends State<MenuScreenAdd> {
                 ),
                 SizedBox(height: 16),
                 if (_image != null)
-                  Image.network(
-                    _image!.path,
-                    height: 200,
-                    fit: BoxFit.cover,
+                  Image.file(
+                    File(_image!.path),
+                    height: 200.0,
                   )
                 else
                   Container(),
@@ -432,6 +479,53 @@ class _MenuScreenStateAdd extends State<MenuScreenAdd> {
             ),
           ),
         ),
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
+        showSelectedLabels: true,
+        items: <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.menu),
+            label: 'Menu',
+          ),
+          BottomNavigationBarItem(
+            icon: CircleAvatar(
+              backgroundColor: Color.fromARGB(188, 209, 0, 0),
+              radius: 30,
+              child: Icon(Icons.qr_code, color: Colors.white, size: 30),
+            ),
+            label: 'Payment',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.list_alt_outlined),
+            label: 'Order',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person_2_outlined),
+            label: 'Account',
+          ),
+        ],
+        currentIndex: _selectedIndex,
+        selectedItemColor: Color.fromARGB(188, 209, 0, 0),
+        unselectedItemColor: Colors.grey,
+        showUnselectedLabels: true,
+        selectedFontSize: 13.0,
+        unselectedFontSize: 13.0,
+        selectedLabelStyle: TextStyle(
+          fontFamily: 'Poppins',
+          fontSize: 16.0,
+          fontWeight: FontWeight.bold,
+        ),
+        unselectedLabelStyle: TextStyle(
+          fontFamily: 'Poppins',
+          fontSize: 14.0,
+          fontWeight: FontWeight.normal,
+        ),
+        onTap: _onItemTapped,
       ),
     );
   }

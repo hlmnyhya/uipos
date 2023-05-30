@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:uipos2/cappbar.dart';
+import 'package:intl/intl.dart';
 import 'package:uipos2/mainmenu/home_screen.dart';
 import 'package:uipos2/mainmenu/menu_screen.dart';
+import 'package:uipos2/menu/menu_add_screen.dart';
+import 'package:uipos2/menu/menu_edit_screen.dart';
 import 'package:uipos2/mainmenu/payment_screen.dart';
 import 'package:uipos2/mainmenu/order_screen.dart';
 import 'package:uipos2/mainmenu/account_screen.dart';
 import 'package:http/http.dart' as http;
+import 'package:uipos2/transaction/transaction_screen.dart';
+import 'package:uipos2/transaction/print.dart';
 import 'dart:convert';
+import '../cappbar.dart';
 
 class TransactionScreen extends StatefulWidget {
   const TransactionScreen({Key? key}) : super(key: key);
@@ -16,30 +21,46 @@ class TransactionScreen extends StatefulWidget {
 }
 
 class _TransactionScreenState extends State<TransactionScreen> {
-  List<dynamic> productList = [];
+  List<dynamic> detailtransactionData = [];
+  int? idtransaksi;
+  int? idcustomer;
+  Map<String, dynamic>? product;
+  num totalPrice = 0; // Updated totalPrice variable
 
   @override
   void initState() {
     super.initState();
-    fetchDataTransaksi();
+    fetchdetailtrans();
   }
 
-  Future<void> fetchDataTransaksi() async {
-    final apiUrl =
-        "https://api.couplemoment.com/temptransaksi"; // Updated API URL
-    final response = await http.get(Uri.parse(apiUrl));
+  Future<void> fetchdetailtrans() async {
+    var url = Uri.parse('http://192.168.1.8:3000/detailtransaksi');
+    var response = await http.get(url);
 
     if (response.statusCode == 200) {
-      final data = json.decode(response.body);
+      var data = json.decode(response.body);
 
       setState(() {
-        productList = data['data']['products'];
+        detailtransactionData = data['data'];
+        idtransaksi = detailtransactionData[0]['id_transaksi'];
+        idcustomer = detailtransactionData[0]['id_customer'];
+
+        // Calculate total price
+        totalPrice = detailtransactionData.fold<num>(
+          0,
+          (total, product) => total + product['harga'] * product['qty'],
+        );
       });
     }
   }
 
-  int _selectedIndex = 3;
+  String formatTotalPrice() {
+    final formattedPrice =
+        totalPrice.toStringAsFixed(2); // Specify decimal precision as needed
+    return double.parse(formattedPrice).toString();
+  }
 
+  int _selectedIndex = 3;
   void _onItemTapped(int index) {
     if (index == 0) {
       // Navigasi ke MenuScreen
@@ -84,10 +105,8 @@ class _TransactionScreenState extends State<TransactionScreen> {
       ),
       body: SingleChildScrollView(
         child: Container(
-          alignment: Alignment.center,
           padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
                 margin: EdgeInsets.all(10),
@@ -108,9 +127,9 @@ class _TransactionScreenState extends State<TransactionScreen> {
                     ),
                     SizedBox(height: 30),
                     Text(
-                      'ID Customer: 123/21321/213',
+                      'Invoice: INV/$idtransaksi/$idcustomer/${DateFormat("ddMMyy").format(DateTime.now())}',
                       style: TextStyle(
-                        fontSize: 14,
+                        color: Colors.black,
                         fontWeight: FontWeight.bold,
                         fontFamily: 'Poppins',
                       ),
@@ -160,7 +179,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
                             ),
                           ),
                         ],
-                        rows: productList.map<DataRow>((product) {
+                        rows: detailtransactionData.map<DataRow>((product) {
                           final name = product['nama'];
                           final qty = product['qty'];
                           final price = product['harga'];
@@ -170,45 +189,64 @@ class _TransactionScreenState extends State<TransactionScreen> {
                           return DataRow(cells: [
                             DataCell(Text(name)),
                             DataCell(Text('${qty}x')),
-                            DataCell(Text(price.toInt().toString())),
+                            DataCell(Text(price.toString())),
                           ]);
-                        }).toList(),
-                      ),
-                    ),
-                    SizedBox(height: 20),
-                    ElevatedButton(
-                      onPressed: () {
-                        // Add your onPressed logic here
-                      },
-                      style: ElevatedButton.styleFrom(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20.0),
-                        ),
-                        primary: Color.fromARGB(188, 209, 0, 0),
-                        padding:
-                            EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-                        minimumSize: Size(150, 40),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.print,
-                            color: Colors.white,
-                          ),
-                          SizedBox(width: 10),
-                          Text(
-                            'Print Now',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontFamily: 'Poppins',
-                              fontSize: 14.0,
+                        }).toList()
+                          ..add(
+                            DataRow(
+                              cells: [
+                                DataCell(Text(
+                                  'Total',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    fontFamily: 'Poppins',
+                                  ),
+                                )),
+                                DataCell(Text('')),
+                                DataCell(Text(totalPrice
+                                    .toString())), // Display total price
+                              ],
                             ),
                           ),
-                        ],
                       ),
                     ),
                   ],
+                ),
+              ),
+              SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => Print()),
+                  );
+                },
+                child:
+                    // Icon(Icons.print),
+                    //make iocn and text in a row
+                    Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.print),
+                    SizedBox(width: 5),
+                    Text(
+                      'Print',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontFamily: 'Poppins',
+                      ),
+                    ),
+                  ],
+                ),
+                style: ElevatedButton.styleFrom(
+                  padding: EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+                  minimumSize: Size(150, 50),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(50.0),
+                  ),
+                  backgroundColor: Color.fromARGB(188, 209, 0, 0),
+                  fixedSize: Size(150, 50),
                 ),
               ),
             ],
@@ -246,20 +284,6 @@ class _TransactionScreenState extends State<TransactionScreen> {
         ],
         currentIndex: _selectedIndex,
         selectedItemColor: Color.fromARGB(188, 209, 0, 0),
-        unselectedItemColor: Colors.grey,
-        showUnselectedLabels: true,
-        selectedFontSize: 13.0,
-        unselectedFontSize: 13.0,
-        selectedLabelStyle: TextStyle(
-          fontFamily: 'Poppins',
-          fontSize: 16.0,
-          fontWeight: FontWeight.bold,
-        ),
-        unselectedLabelStyle: TextStyle(
-          fontFamily: 'Poppins',
-          fontSize: 14.0,
-          fontWeight: FontWeight.normal,
-        ),
         onTap: _onItemTapped,
       ),
     );

@@ -23,11 +23,24 @@ class OrderScreen extends StatefulWidget {
 }
 
 class _OrderScreenState extends State<OrderScreen> {
-  final String apiUrl = "https://api.couplemoment.com/temptransaksi";
-
   Future<List<dynamic>> _fetchdatatemptrans() async {
-    var result = await http.get(Uri.parse(apiUrl));
-    return json.decode(result.body)['data'];
+    var result =
+        await http.get(Uri.parse('http://192.168.1.8:3000/temptransaksi'));
+    var jsonData = json.decode(result.body);
+    List<dynamic> dataList = jsonData['data'];
+
+    // Iterate over the dataList and modify the necessary fields
+    for (var data in dataList) {
+      data['id_transaksi'] = data['id_transaksi'].toString();
+      data['id_customer'] = data['id_customer'].toString();
+      data['total'] = data['total'].toString();
+      data['bayar'] = data['bayar'].toString();
+      data['kembali'] = data['kembali'].toString();
+      data['createdAt'] = DateTime.parse(data['createdAt']);
+      data['updatedAt'] = DateTime.parse(data['updatedAt']);
+    }
+
+    return dataList;
   }
 
   Future<Widget> get child async => GridView.count(
@@ -100,12 +113,13 @@ class _OrderScreenState extends State<OrderScreen> {
                       final temptrans = snapshot.data[index];
                       return GestureDetector(
                         onTap: () {
+                          // int idTransaksi = temptrans['id_transaksi'];
                           Navigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (context) => OrderDetailScreen(
-                                idTempTrans: temptrans['id_temp_trans'],
-                              ),
+                                  idtransaksi:
+                                      1), // Replace 123 with your actual idtransaksi value
                             ),
                           );
                         },
@@ -125,7 +139,7 @@ class _OrderScreenState extends State<OrderScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    'Order #${temptrans['id_temp_trans']}',
+                                    'Order #${temptrans['id_transaksi']}',
                                     style: TextStyle(
                                       color: Colors.black,
                                       fontWeight: FontWeight.bold,
@@ -134,15 +148,7 @@ class _OrderScreenState extends State<OrderScreen> {
                                   ),
                                   SizedBox(height: 4.0),
                                   Text(
-                                    'ID Customer: ${temptrans['id_customer']}',
-                                    style: TextStyle(
-                                      color: Colors.black,
-                                      fontFamily: 'Poppins',
-                                    ),
-                                  ),
-                                  SizedBox(height: 4.0),
-                                  Text(
-                                    'Qty: ${temptrans['qty']}',
+                                    'Invoice: INV/${temptrans['id_transaksi']}/${DateFormat('ddmmyy').format(DateTime.now())}',
                                     style: TextStyle(
                                       color: Colors.black,
                                       fontFamily: 'Poppins',

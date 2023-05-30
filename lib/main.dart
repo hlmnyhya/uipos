@@ -53,8 +53,6 @@ class _SplashScreenState extends State<SplashScreen> {
               'assets/images/landing.png',
               width: 200, // Lebar gambar splash screen
               height: 200, // Tinggi gambar splash screen
-              // Tambahkan atribut `fit` jika diperlukan
-              // fit: BoxFit.contain,
             ),
             SizedBox(height: 200), // Tinggi SizedBox untuk spasi
             Text(

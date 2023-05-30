@@ -22,7 +22,7 @@ class _DetailScreenState extends State<DetailScreen> {
   int _selectedIndex = 1;
 
   Future<void> deleteMenu(String idProduct) async {
-    final url = Uri.parse('https://api.couplemoment.com/product/$idProduct');
+    final url = Uri.parse('http://api.couplemoment.com/product/$idProduct');
 
     final response = await http.delete(url);
 
@@ -88,7 +88,7 @@ class _DetailScreenState extends State<DetailScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SizedBox(height: 16),
+            SizedBox(height: 10),
             Padding(
               padding: EdgeInsets.all(20),
               child: ClipRRect(
@@ -138,7 +138,7 @@ class _DetailScreenState extends State<DetailScreen> {
                 ],
               ),
             ),
-            SizedBox(height: 16),
+            // SizedBox(height: 10),
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Row(

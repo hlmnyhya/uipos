@@ -9,6 +9,7 @@ import 'package:uipos2/mainmenu/payment_screen.dart';
 import 'package:uipos2/mainmenu/order_screen.dart';
 import 'package:uipos2/mainmenu/account_screen.dart';
 import 'package:uipos2/menu/menu_add_screen.dart';
+import 'package:uipos2/transaction/transaction_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -180,13 +181,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 _buildMenuItem(Icons.history, 'History', onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => HistoryScreen()),
+                    MaterialPageRoute(
+                        builder: (context) => TransactionScreen()),
                   );
                 }),
                 _buildMenuItem(Icons.shopping_cart_rounded, 'Cart', onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => MenuScreen()),
+                    MaterialPageRoute(builder: (context) => OrderScreen()),
                   );
                 }),
                 _buildMenuItem(Icons.favorite_border_rounded, 'Favourites',
