@@ -2,19 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:uipos2/mainmenu/home_screen.dart';
 import 'package:uipos2/mainmenu/menu_screen.dart';
-import 'package:uipos2/menu/menu_add_screen.dart';
-import 'package:uipos2/menu/menu_edit_screen.dart';
 import 'package:uipos2/mainmenu/payment_screen.dart';
-import 'package:uipos2/mainmenu/order_screen.dart';
 import 'package:uipos2/mainmenu/account_screen.dart';
 import 'package:http/http.dart' as http;
-import 'package:uipos2/transaction/transaction_screen.dart';
 import 'package:uipos2/transaction/print.dart';
 import 'dart:convert';
-import '../cappbar.dart';
+import 'package:uipos2/theme/cappbar.dart';
+import 'package:uipos2/theme/bottomnavbar.dart';
 
 class TransactionScreen extends StatefulWidget {
-  const TransactionScreen({Key? key}) : super(key: key);
+  final int idtransaksi;
+
+  const TransactionScreen({Key? key, required this.idtransaksi})
+      : super(key: key);
 
   @override
   State<TransactionScreen> createState() => _TransactionScreenState();
@@ -30,11 +30,13 @@ class _TransactionScreenState extends State<TransactionScreen> {
   @override
   void initState() {
     super.initState();
+    idtransaksi = widget.idtransaksi;
     fetchdetailtrans();
   }
 
   Future<void> fetchdetailtrans() async {
-    var url = Uri.parse('http://192.168.1.8:3000/detailtransaksi');
+    var url = Uri.parse(
+        'https://api.couplemoment.com/detailtransaksi/${widget.idtransaksi}');
     var response = await http.get(url);
 
     if (response.statusCode == 200) {
@@ -84,7 +86,10 @@ class _TransactionScreenState extends State<TransactionScreen> {
     if (index == 3) {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => TransactionScreen()),
+        MaterialPageRoute(
+            builder: (context) => TransactionScreen(
+                  idtransaksi: widget.idtransaksi,
+                )),
       );
     }
     if (index == 4) {
@@ -99,9 +104,9 @@ class _TransactionScreenState extends State<TransactionScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomAppBar(
-        title: 'Order',
-        breadcrumbItem: 'Order',
-        breadcrumbItem2: 'Payment',
+        title: 'Pesan',
+        breadcrumbItem: 'Pesan',
+        breadcrumbItem2: 'Pembayaran',
       ),
       body: SingleChildScrollView(
         child: Container(
@@ -127,7 +132,8 @@ class _TransactionScreenState extends State<TransactionScreen> {
                     ),
                     SizedBox(height: 30),
                     Text(
-                      'Invoice: INV/$idtransaksi/$idcustomer/${DateFormat("ddMMyy").format(DateTime.now())}',
+                      'Invoice: CST/' +
+                          '${DateFormat("dd/MM/yyyy").format(DateTime.now())}',
                       style: TextStyle(
                         color: Colors.black,
                         fontWeight: FontWeight.bold,
@@ -135,7 +141,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
                       ),
                     ),
                     Text(
-                      'Cashier: Admin',
+                      'Kasir: Admin',
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
@@ -150,7 +156,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
                         columns: [
                           DataColumn(
                             label: Text(
-                              'Name',
+                              'Nama',
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.bold,
@@ -170,7 +176,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
                           ),
                           DataColumn(
                             label: Text(
-                              'Price',
+                              'Harga',
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.bold,
@@ -219,7 +225,10 @@ class _TransactionScreenState extends State<TransactionScreen> {
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => Print()),
+                    MaterialPageRoute(
+                        builder: (context) => Print(
+                              idtransaksi: widget.idtransaksi,
+                            )),
                   );
                 },
                 child:
@@ -228,12 +237,12 @@ class _TransactionScreenState extends State<TransactionScreen> {
                     Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.print),
+                    Icon(Icons.print, size: 15),
                     SizedBox(width: 5),
                     Text(
-                      'Print',
+                      'Cetak Struk',
                       style: TextStyle(
-                        fontSize: 16,
+                        fontSize: 14,
                         fontFamily: 'Poppins',
                       ),
                     ),
@@ -253,37 +262,8 @@ class _TransactionScreenState extends State<TransactionScreen> {
           ),
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        showSelectedLabels: true,
-        items: <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.menu),
-            label: 'Menu',
-          ),
-          BottomNavigationBarItem(
-            icon: CircleAvatar(
-              backgroundColor: Color.fromARGB(188, 209, 0, 0),
-              radius: 30,
-              child: Icon(Icons.qr_code, color: Colors.white, size: 30),
-            ),
-            label: 'Payment',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.list_alt_outlined),
-            label: 'Order',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_2_outlined),
-            label: 'Account',
-          ),
-        ],
+      bottomNavigationBar: CustomBottomNavigationBar(
         currentIndex: _selectedIndex,
-        selectedItemColor: Color.fromARGB(188, 209, 0, 0),
         onTap: _onItemTapped,
       ),
     );

@@ -1,12 +1,10 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:uipos2/signin_screen.dart';
-import 'package:uipos2/landing_page.dart';
-import 'package:uipos2/signup_screen.dart';
-import 'package:uipos2/cappbar.dart';
+import 'package:uipos2/theme/cappbar.dart';
+import 'package:uipos2/theme/bottomnavbar.dart';
 import 'package:uipos2/mainmenu/home_screen.dart';
-import 'package:uipos2/mainmenu/menu_screen.dart';
 import 'package:uipos2/mainmenu/payment_screen.dart';
 import 'package:uipos2/mainmenu/order_screen.dart';
 import 'package:uipos2/mainmenu/account_screen.dart';
@@ -20,7 +18,108 @@ class MenuScreen extends StatefulWidget {
   State<MenuScreen> createState() => _MenuScreenState();
 }
 
-class _MenuScreenState extends State<MenuScreen> {
+class _MenuScreenState extends State<MenuScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  bool _isExpanded = false;
+  TextEditingController _transactionController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: Duration(milliseconds: 300),
+    );
+    _fetchUserData().then((userData) {
+      // Lakukan sesuatu dengan data pengguna yang diterima
+      print('User data: $userData');
+    });
+
+    _fetchdataproduct().then((productData) {
+      // Lakukan sesuatu dengan data pengguna yang diterima
+      print('Product data: $productData');
+    });
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    _transactionController.dispose();
+    super.dispose();
+  }
+
+  void _toggleExpanded() {
+    setState(() {
+      _isExpanded = !_isExpanded;
+      if (_isExpanded) {
+        _animationController.forward();
+      } else {
+        _animationController.reverse();
+      }
+    });
+  }
+
+  void _submitDataToAPI(BuildContext context) async {
+    final url = Uri.parse(
+        'https://api.couplemoment.com/transaksi/temp'); // API endpoint
+    final customerName = _transactionController.text;
+
+    try {
+      final response = await http.post(
+        url,
+        body: {'nama': customerName},
+      );
+
+      if (response.statusCode == 200) {
+        // Request successful, handle the response if needed
+        print('Data submitted successfully');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Data submitted successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        // Request failed, handle the error
+        print('Failed to submit data. Status code: ${response.statusCode}');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                'Failed to submit data. Status code: ${response.statusCode}'),
+          ),
+        );
+      }
+    } catch (error) {
+      // Exception occurred during the request
+      print('Error submitting data: $error');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error submitting data: $error'),
+        ),
+      );
+    }
+  }
+
+  Future<Map<String, dynamic>> _fetchUserData() async {
+    var url = Uri.parse('http://192.168.1.16:4000/user');
+
+    try {
+      var response = await http.get(url);
+      if (response.statusCode == 200) {
+        var data = json.decode(response.body)['data'];
+        print(data);
+        return Map<String, dynamic>.from(data);
+      } else {
+        print('Request failed with status: ${response.statusCode}');
+      }
+    } catch (error) {
+      print('Error: $error');
+    }
+
+    return {}; // Return an empty map if there's an error or the response is not successful
+  }
+
   List<Map<String, dynamic>> _cartItems = [];
   int? productId;
   String? productName;
@@ -28,12 +127,25 @@ class _MenuScreenState extends State<MenuScreen> {
   String? productImage;
   String? productDescription;
   String? productStock;
+  // String? userId;
   Map<String, dynamic>? cartproduct;
 
   Future<List<Map<String, dynamic>>> _fetchdataproduct() async {
-    var result = await http.get(Uri.parse('http://192.168.1.8:3000/product'));
-    var data = json.decode(result.body)['data'];
-    return List<Map<String, dynamic>>.from(data);
+    var url = Uri.parse('https://api.couplemoment.com/product');
+    try {
+      var response = await http.get(url);
+      if (response.statusCode == 200) {
+        var data = json.decode(response.body)['data'];
+        print(data);
+        return List<Map<String, dynamic>>.from(data);
+      } else {
+        print('Request failed with status: ${response.statusCode}');
+      }
+    } catch (error) {
+      print('Error: $error');
+    }
+
+    return []; // Return an empty list if there's an error or the response is not successful
   }
 
   int _selectedIndex = 1;
@@ -70,10 +182,12 @@ class _MenuScreenState extends State<MenuScreen> {
 
   void _navigateToDetailScreen(Map<String, dynamic> product) {
     if (product['stok'] > 0) {
-      productId = product['id_product'];
+      productId = product['id_product'].toInt();
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => DetailScreen(product: product)),
+        MaterialPageRoute(
+            builder: (context) =>
+                DetailScreen(idProduct: productId, product: product)),
       );
     } else {
       showDialog(
@@ -84,18 +198,24 @@ class _MenuScreenState extends State<MenuScreen> {
               borderRadius: BorderRadius.circular(10),
             ),
             title: Text(
-              'Out of Stock',
+              'Stok Habis',
               style: TextStyle(
                 color: Colors.black,
                 fontWeight: FontWeight.bold,
                 fontFamily: 'Poppins',
               ),
             ),
-            content: Text('This product is currently out of stock.'),
+            content: Text('Stok produk ini sudah habis'),
             actions: [
               TextButton(
                 onPressed: () {
-                  Navigator.pop(context);
+                  productId = product['id_product'].toInt();
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => DetailScreen(
+                            idProduct: productId, product: product)),
+                  );
                 },
                 child: Text(
                   'OK',
@@ -116,9 +236,9 @@ class _MenuScreenState extends State<MenuScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomAppBar(
-        title: 'Menu',
-        breadcrumbItem: 'Menu',
-        breadcrumbItem2: 'All Menu',
+        title: 'Produk',
+        breadcrumbItem: 'Produk',
+        breadcrumbItem2: 'Semua Produk',
       ),
       body: Column(
         children: [
@@ -167,72 +287,203 @@ class _MenuScreenState extends State<MenuScreen> {
         children: [
           FloatingActionButton(
             onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => OrderScreen()),
-              ); // Tambahkan kode aksi untuk tombol shopping cart_checkout di sini
+              _toggleExpanded();
             },
-            child: Icon(Icons.shopping_cart_checkout),
-            backgroundColor: Color.fromARGB(255, 228, 171, 0),
+            child: AnimatedIcon(
+              icon: AnimatedIcons.menu_close,
+              progress: _animationController,
+            ),
+            backgroundColor: Color.fromARGB(188, 209, 0, 0),
           ),
           SizedBox(height: 16),
-          FloatingActionButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => MenuScreenAdd()),
-              );
-            },
-            child: Icon(Icons.add),
-            backgroundColor: Color.fromARGB(188, 209, 0, 0),
+          AnimatedCrossFade(
+            duration: Duration(milliseconds: 300),
+            firstChild: SizedBox(),
+            secondChild: Visibility(
+              visible: _isExpanded,
+              child: Column(
+                children: [
+                  FloatingActionButton(
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return AlertDialog(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10.0),
+                            ),
+                            title: Text(
+                              'Buat Transaksi',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.black,
+                                fontFamily: 'Poppins',
+                              ),
+                            ),
+                            content: TextFormField(
+                              controller: _transactionController,
+                              keyboardType: TextInputType.text,
+                              decoration: InputDecoration(
+                                labelText: 'Nama Pelanggan',
+                                labelStyle: TextStyle(
+                                    color: Colors.black, fontFamily: 'Poppins'),
+                                border: OutlineInputBorder(
+                                  borderRadius:
+                                      BorderRadius.all(Radius.circular(30.0)),
+                                  borderSide: BorderSide(
+                                    color: Color.fromARGB(188, 209, 0, 0),
+                                  ),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius:
+                                      BorderRadius.all(Radius.circular(30.0)),
+                                  borderSide: BorderSide(
+                                    color: Color.fromARGB(188, 209, 0, 0),
+                                  ),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius:
+                                      BorderRadius.all(Radius.circular(30.0)),
+                                  borderSide: BorderSide(
+                                    color: Color.fromARGB(188, 209, 0, 0),
+                                  ),
+                                ),
+                                filled: true,
+                                fillColor: Colors.white,
+                                contentPadding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                  horizontal: 24,
+                                ),
+                              ),
+                              validator: (value) {
+                                if (value!.isEmpty) {
+                                  return 'Please enter your customer name';
+                                }
+                                return null;
+                              },
+                            ),
+                            actions: <Widget>[
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment
+                                    .center, // Fix: Wrap MainAxisAlignment.spaceBetween widget around children
+                                children: [
+                                  ElevatedButton(
+                                    onPressed: () {
+                                      Navigator.of(context).pop();
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(30.0),
+                                      ),
+                                      primary: Color.fromARGB(188, 209, 0, 0),
+                                      padding: EdgeInsets.symmetric(
+                                        vertical: 16,
+                                        horizontal: 24,
+                                      ),
+                                      minimumSize: Size(4, 4),
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.cancel,
+                                          color: Colors.white,
+                                          size: 18,
+                                        ),
+                                        SizedBox(width: 8),
+                                        Text(
+                                          'Batal',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: Colors.white,
+                                            fontFamily: 'Poppins',
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  SizedBox(width: 16), // Jarak antara tombol
+                                  ElevatedButton(
+                                    onPressed: () {
+                                      _submitDataToAPI(
+                                          context); // Call the function to submit data to the API
+                                      Navigator.of(context).pop();
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                            builder: (context) => MenuScreen()),
+                                      );
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(30.0),
+                                      ),
+                                      primary: Color.fromARGB(188, 209, 0, 0),
+                                      padding: EdgeInsets.symmetric(
+                                        vertical: 16,
+                                        horizontal: 24,
+                                      ),
+                                      minimumSize: Size(4, 4),
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.save,
+                                          color: Colors.white,
+                                          size: 18,
+                                        ),
+                                        SizedBox(width: 8),
+                                        Text(
+                                          'Simpan',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: Colors.white,
+                                            fontFamily: 'Poppins',
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          );
+                        },
+                      );
+                    },
+                    child: Icon(CupertinoIcons.cart_fill_badge_plus),
+                    backgroundColor: Color.fromARGB(255, 228, 171, 0),
+                  ),
+                  SizedBox(height: 16),
+                  FloatingActionButton(
+                    onPressed: () {
+                      // Tambahkan kode aksi untuk tombol lain di sini
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => MenuScreenAdd()),
+                      );
+                      print('Button 2 pressed');
+                    },
+                    child: Icon(CupertinoIcons.cube_box),
+                    backgroundColor: Color.fromARGB(188, 209, 0, 0),
+                  ),
+                ],
+              ),
+            ),
+            crossFadeState: _isExpanded
+                ? CrossFadeState.showSecond
+                : CrossFadeState.showFirst,
           ),
         ],
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        showSelectedLabels: true,
-        items: <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.menu),
-            label: 'Menu',
-          ),
-          BottomNavigationBarItem(
-            icon: CircleAvatar(
-              backgroundColor: Color.fromARGB(188, 209, 0, 0),
-              radius: 30,
-              child: Icon(Icons.qr_code, color: Colors.white, size: 30),
-            ),
-            label: 'Payment',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.list_alt_outlined),
-            label: 'Order',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_2_outlined),
-            label: 'Account',
-          ),
-        ],
+      bottomNavigationBar: CustomBottomNavigationBar(
         currentIndex: _selectedIndex,
-        selectedItemColor: Color.fromARGB(188, 209, 0, 0),
-        unselectedItemColor: Colors.grey,
-        showUnselectedLabels: true,
-        selectedFontSize: 13.0,
-        unselectedFontSize: 13.0,
-        selectedLabelStyle: TextStyle(
-          fontFamily: 'Poppins',
-          fontSize: 16.0,
-          fontWeight: FontWeight.bold,
-        ),
-        unselectedLabelStyle: TextStyle(
-          fontFamily: 'Poppins',
-          fontSize: 14.0,
-          fontWeight: FontWeight.normal,
-        ),
         onTap: _onItemTapped,
       ),
     );
@@ -263,8 +514,7 @@ Widget buildProductCard(dynamic product, int qty, BuildContext context) {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(10),
                 child: Image.network(
-                  product['gambar'] ??
-                      'https://www.generationsforpeace.org/wp-content/uploads/2018/03/empty.jpg',
+                  'https://www.generationsforpeace.org/wp-content/uploads/2018/03/empty.jpg',
                   fit: BoxFit.cover,
                   width: double.infinity,
                 ),
@@ -277,7 +527,7 @@ Widget buildProductCard(dynamic product, int qty, BuildContext context) {
                 children: [
                   SizedBox(height: 8),
                   Text(
-                    product['nama'],
+                    product['nama'] ?? 'Nama Produk',
                     style: TextStyle(
                       color: Color.fromARGB(255, 35, 35, 35),
                       fontSize: 14,
@@ -286,7 +536,7 @@ Widget buildProductCard(dynamic product, int qty, BuildContext context) {
                     ),
                   ),
                   Text(
-                    product['deskripsi'],
+                    product['deskripsi'] ?? 'Deskripsi Produk',
                     style: TextStyle(
                       color: Color.fromARGB(255, 35, 35, 35),
                       fontSize: 10,
@@ -295,7 +545,7 @@ Widget buildProductCard(dynamic product, int qty, BuildContext context) {
                   ),
                   SizedBox(height: 5),
                   Text(
-                    'Rp. ${product['harga']},-',
+                    'Rp. ${product['harga']},-' ?? 'Harga Produk',
                     style: TextStyle(
                       color: Color.fromARGB(255, 35, 35, 35),
                       fontSize: 14,
@@ -327,10 +577,9 @@ Widget buildProductCard(dynamic product, int qty, BuildContext context) {
             child: CircleAvatar(
               backgroundColor: Colors.red,
               radius: 20,
-              child: IconButton(
+              child: FloatingActionButton(
                 onPressed: () {
                   cartproduct = product;
-                  // print(cartproduct);
                   showDialog(
                     context: context,
                     builder: (BuildContext context) {
@@ -345,10 +594,8 @@ Widget buildProductCard(dynamic product, int qty, BuildContext context) {
                     },
                   );
                 },
-                icon: Icon(Icons.add, size: 15),
-                color: Colors.white,
-                padding: EdgeInsets.all(5),
-                splashRadius: 20,
+                child: Icon(Icons.add, color: Colors.white, size: 25),
+                backgroundColor: Color.fromARGB(188, 209, 0, 0),
               ),
             ),
           ),
@@ -402,7 +649,7 @@ class _AddToCartDialogState extends State<AddToCartDialog> {
 
       // Make an HTTP POST request to the API
       var response = await http.post(
-        Uri.parse('http://192.168.1.8:3000/temptransaksi/add'),
+        Uri.parse('https://api.couplemoment.com/temptransaksi/add'),
         // Replace with the appropriate API URL
         headers: {
           'Content-Type': 'application/json',
@@ -416,58 +663,17 @@ class _AddToCartDialogState extends State<AddToCartDialog> {
         print('Data added to temptransaksi successfully');
 
         // Insert data into the transaksi table
-        var transaksiData = {
-          'total':
-              0, // Set the initial total to 0 or calculate it based on the added products
-          'bayar': 0, // Set the initial bayar value to 0 or update it later
-          'kembali': 0, // Set the initial kembali value to 0 or update it later
-        };
 
-        var transaksiResponse = await http.post(
-          Uri.parse('http://192.168.1.8:3000/transaksi/add'),
-          // Replace with the appropriate API URL
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: jsonEncode(transaksiData),
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Berhasil ditambahkan ke keranjang'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
         );
 
-        if (transaksiResponse.statusCode == 200) {
-          // Successfully added to the transaksi table
-          var transaksiId =
-              jsonDecode(transaksiResponse.body)['data']['id_transaksi'];
-          print('Data added to transaksi successfully with ID: $transaksiId');
-
-          // Insert data into the customer table
-          var customerData = {
-            'nama': '', // Set the appropriate customer name
-            'kode_customer': '', // Set the appropriate customer code
-          };
-
-          var customerResponse = await http.post(
-            Uri.parse('http://192.168.1.8:3000/customer/add'),
-            // Replace with the appropriate API URL
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: jsonEncode(customerData),
-          );
-
-          if (customerResponse.statusCode == 200) {
-            // Successfully added to the customer table
-            var customerId =
-                jsonDecode(customerResponse.body)['data']['id_customer'];
-            print('Data added to customer successfully with ID: $customerId');
-            widget.onAddToCart(); // Call the onAddToCart function
-            // Close the dialog
-          } else {
-            // Failed to add to the customer table, handle the error if needed
-            print('Failed to add data to customer');
-          }
-        } else {
-          // Failed to add to the transaksi table, handle the error if needed
-          print('Failed to add data to transaksi');
-        }
+        // Close the dialog
+        Navigator.pop(context);
       } else {
         // Failed to add to temptransaksi, handle the error if needed
         print('Failed to add data to temptransaksi');
@@ -482,10 +688,9 @@ class _AddToCartDialogState extends State<AddToCartDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: Text(
-        'Add to Cart',
+        'Tambah ke Keranjang',
         style: TextStyle(
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
+          fontSize: 16,
           color: Colors.black,
           fontFamily: 'Poppins',
         ),
@@ -562,14 +767,24 @@ class _AddToCartDialogState extends State<AddToCartDialog> {
               ),
               minimumSize: Size(4, 4),
             ),
-            child: Text(
-              'Add to Cart',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-                fontFamily: 'Poppins',
-              ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.shopping_cart,
+                  color: Colors.white,
+                  size: 18,
+                ),
+                SizedBox(width: 8),
+                Text(
+                  'Tambah ke Keranjang',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.white,
+                    fontFamily: 'Poppins',
+                  ),
+                ),
+              ],
             ),
           ),
         ],

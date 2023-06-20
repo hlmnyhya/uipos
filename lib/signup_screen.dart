@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:uipos2/mainmenu/home_screen.dart';
+import 'package:http/http.dart' as http;
 import 'package:uipos2/landing_page.dart';
+import 'dart:convert';
 import 'package:uipos2/signin_screen.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({Key? key}) : super(key: key);
@@ -11,11 +13,57 @@ class SignUpPage extends StatefulWidget {
 }
 
 class _SignUpPageState extends State<SignUpPage> {
+  final storage = FlutterSecureStorage();
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _usernameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+
+  Future<void> register() async {
+    if (_formKey.currentState!.validate()) {
+      String name = _nameController.text;
+      String email = _emailController.text;
+      String password = _passwordController.text;
+
+      Map<String, dynamic> requestBody = {
+        'name': name,
+        'email': email,
+        'password': password,
+      };
+
+      var url = Uri.parse('https://couplemoment.com/user/register');
+      var response = await http.post(url, body: requestBody);
+
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text('Account registered successfully'),
+              backgroundColor: Colors.green),
+        );
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => SignInPage()),
+        );
+        var responseData = json.decode(response.body);
+        String token = responseData['token'];
+
+        // Store the token securely
+        await storage.write(key: 'token', value: token);
+      } else {
+        // Registration failed
+        var errorMessage = 'Gagal membuat akun';
+        // Handle the error message here
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(errorMessage), backgroundColor: Colors.red),
+        );
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => LandingPage()),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +84,7 @@ class _SignUpPageState extends State<SignUpPage> {
           children: [
             const SizedBox(height: 10),
             const Text(
-              'Sign Up!',
+              'Daftar',
               style: TextStyle(
                   fontSize: 20, color: Colors.black, fontFamily: 'Poppins'),
             ),
@@ -82,8 +130,9 @@ class _SignUpPageState extends State<SignUpPage> {
                             TextFormField(
                               controller: _nameController,
                               keyboardType: TextInputType.text,
+                              cursorColor: Colors.red,
                               decoration: InputDecoration(
-                                labelText: 'Full Name',
+                                labelText: 'Nama',
                                 labelStyle: TextStyle(
                                     color: Colors.black, fontFamily: 'Poppins'),
                                 border: OutlineInputBorder(
@@ -116,8 +165,8 @@ class _SignUpPageState extends State<SignUpPage> {
                                 ),
                               ),
                               validator: (value) {
-                                if (value!.isEmpty) {
-                                  return 'Please enter your email';
+                                if (value == null || value.isEmpty) {
+                                  return 'Nama tidak boleh kosong';
                                 }
                                 return null;
                               },
@@ -126,6 +175,7 @@ class _SignUpPageState extends State<SignUpPage> {
                             TextFormField(
                               controller: _emailController,
                               keyboardType: TextInputType.emailAddress,
+                              cursorColor: Colors.red,
                               decoration: InputDecoration(
                                 labelText: 'Email',
                                 labelStyle: TextStyle(
@@ -161,59 +211,17 @@ class _SignUpPageState extends State<SignUpPage> {
                               ),
                               validator: (value) {
                                 if (value!.isEmpty) {
-                                  return 'Please enter your email';
+                                  return 'Email tidak boleh kosong';
                                 }
                                 return null;
                               },
                             ),
-                            const SizedBox(height: 10),
-                            TextFormField(
-                              controller: _usernameController,
-                              keyboardType: TextInputType.text,
-                              decoration: InputDecoration(
-                                labelText: 'Username',
-                                labelStyle: TextStyle(
-                                    color: Colors.black, fontFamily: 'Poppins'),
-                                border: OutlineInputBorder(
-                                  borderRadius:
-                                      BorderRadius.all(Radius.circular(30.0)),
-                                  borderSide: BorderSide(
-                                    color: Color.fromARGB(188, 209, 0, 0),
-                                  ),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius:
-                                      BorderRadius.all(Radius.circular(30.0)),
-                                  borderSide: BorderSide(
-                                    color: Color.fromARGB(188, 209, 0, 0),
-                                  ),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius:
-                                      BorderRadius.all(Radius.circular(30.0)),
-                                  borderSide: BorderSide(
-                                    color: Color.fromARGB(188, 209, 0, 0),
-                                  ),
-                                ),
-                                filled: true,
-                                fillColor:
-                                    Colors.white, // menentukan warna background
-                                contentPadding: const EdgeInsets.symmetric(
-                                  vertical: 16,
-                                  horizontal: 24,
-                                ),
-                              ),
-                              validator: (value) {
-                                if (value!.isEmpty) {
-                                  return 'Please enter your email';
-                                }
-                                return null;
-                              },
-                            ),
+
                             const SizedBox(height: 10),
                             TextFormField(
                               controller: _passwordController,
                               obscureText: true,
+                              cursorColor: Colors.red,
                               decoration: InputDecoration(
                                 labelText: 'Password',
                                 labelStyle: TextStyle(
@@ -249,7 +257,7 @@ class _SignUpPageState extends State<SignUpPage> {
                               ),
                               validator: (value) {
                                 if (value!.isEmpty) {
-                                  return 'Please enter your email';
+                                  return 'Password tidak boleh kosong';
                                 }
                                 return null;
                               },
@@ -257,21 +265,12 @@ class _SignUpPageState extends State<SignUpPage> {
                             const SizedBox(height: 25),
                             ElevatedButton(
                               onPressed: () {
-                                if (_formKey.currentState!.validate()) {
-                                  // Aksi saat tombol "Sign In" ditekan
-                                  String email = _emailController.text;
-                                  String password = _passwordController.text;
-                                  print('Email: $email');
-                                  print('Password: $password');
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) =>
-                                            const HomeScreen()),
-                                  );
-                                }
+                                print(_nameController.text);
+                                print(_emailController.text);
+                                print(_passwordController.text);
+                                register();
                               },
-                              child: const Text('Sign Up',
+                              child: const Text('Daftar',
                                   style: TextStyle(fontFamily: 'Poppins')),
                               style: ElevatedButton.styleFrom(
                                 padding: const EdgeInsets.symmetric(
@@ -300,6 +299,19 @@ class _SignUpPageState extends State<SignUpPage> {
                 style: TextStyle(
                     fontWeight: FontWeight.bold, fontFamily: 'Poppins'),
               ),
+              SizedBox(height: 50),
+              TextButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const SignInPage()),
+                  );
+                },
+                child: Text(
+                  'Sudah punya akun? Masuk',
+                  style: TextStyle(fontFamily: 'Poppins', color: Colors.black),
+                ),
+              )
             ],
           ),
         ),

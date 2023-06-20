@@ -3,17 +3,14 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
-import 'package:uipos2/signin_screen.dart';
-import 'package:uipos2/landing_page.dart';
-import 'package:uipos2/signup_screen.dart';
-import 'package:uipos2/cappbar.dart';
+import 'package:uipos2/theme/cappbar.dart';
 import 'package:uipos2/mainmenu/home_screen.dart';
 import 'package:uipos2/mainmenu/menu_screen.dart';
 import 'package:uipos2/mainmenu/payment_screen.dart';
 import 'package:uipos2/mainmenu/order_screen.dart';
 import 'package:uipos2/mainmenu/account_screen.dart';
-import 'package:uipos2/menu/menu_add_screen.dart';
-import 'package:uipos2/menu/menu_detail_screen.dart';
+import 'package:uipos2/theme/bottomnavbar.dart';
+import 'package:uipos2/theme/textinputform.dart';
 
 class MenuScreenAdd extends StatefulWidget {
   const MenuScreenAdd({Key? key}) : super(key: key);
@@ -45,6 +42,7 @@ class _MenuScreenStateAdd extends State<MenuScreenAdd> {
       final deskripsi = _descriptionController.text;
       final harga = _priceController.text;
       final stok = _stockController.text;
+      final gambar = _image!.path;
 
       // Prepare the data to be sent as JSON
       final jsonData = jsonEncode({
@@ -52,12 +50,41 @@ class _MenuScreenStateAdd extends State<MenuScreenAdd> {
         'deskripsi': deskripsi,
         'harga': harga,
         'stok': stok,
+        'gambar': gambar,
       });
+
+      // final url = Uri.parse('https://api.couplemoment.com/product/add');
+
+      // final request = http.MultipartRequest('POST', url);
+
+      // request.headers['Content-Type'] = 'multipart/form-data';
+
+      // // Add the JSON data
+      // request.fields['data'] = jsonData;
+
+      // // Create a multipart request
+      // // Add the image file
+      // final imagePath =
+      //     'path_to_your_image.jpg'; // Replace with the actual image file path
+      // final imageFile = await http.MultipartFile.fromPath(
+      //   'gambar',
+      //   imagePath,
+      //   contentType: MediaType('image',
+      //       'jpeg, jpg, png'), // Adjust the content type based on your image file
+      // );
+      // request.files.add(imageFile);
+
+      // // Send the request
+      // final response = await request.send();
+
+      // final responseString = await response.stream.bytesToString();
+
+      // print(responseString);
 
       // Send the JSON data as the request body
       final response = await http.post(
         Uri.parse(
-            'http://192.168.1.8:3000/product/add'), // Replace with your API endpoint
+            'https://api.couplemoment.com/product/add'), // Replace with your API endpoint
         headers: {'Content-Type': 'application/json'},
         body: jsonData,
       );
@@ -76,18 +103,21 @@ class _MenuScreenStateAdd extends State<MenuScreenAdd> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      'Success',
+                      'Berhasil',
                       style: TextStyle(
                         fontSize: 20.0,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     SizedBox(height: 16.0),
-                    Text('Product added successfully!'),
+                    Text('Produk berhasil ditambahkan'),
                     SizedBox(height: 16.0),
                     TextButton(
                       onPressed: () {
-                        Navigator.of(context).pop();
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => MenuScreen()),
+                        );
                       },
                       child: Text(
                         'OK',
@@ -117,14 +147,14 @@ class _MenuScreenStateAdd extends State<MenuScreenAdd> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      'Error',
+                      'Gagal',
                       style: TextStyle(
                         fontSize: 20.0,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     SizedBox(height: 16.0),
-                    Text('Failed to add product'),
+                    Text('Produk gagal ditambahkan'),
                     SizedBox(height: 16.0),
                     TextButton(
                       onPressed: () {
@@ -210,9 +240,9 @@ class _MenuScreenStateAdd extends State<MenuScreenAdd> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomAppBar(
-        title: 'Menu',
-        breadcrumbItem: 'Menu',
-        breadcrumbItem2: 'Add Menu',
+        title: 'Produk',
+        breadcrumbItem: 'Produk',
+        breadcrumbItem2: 'Tambah Produk',
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -223,161 +253,62 @@ class _MenuScreenStateAdd extends State<MenuScreenAdd> {
               mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                TextFormField(
+                CustomInputField(
                   controller: _nameController,
-                  keyboardType: TextInputType.text,
-                  decoration: InputDecoration(
-                    labelText: 'Product Name',
-                    labelStyle:
-                        TextStyle(color: Colors.black, fontFamily: 'Poppins'),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(30.0)),
-                      borderSide: BorderSide(
-                        color: Color.fromARGB(188, 209, 0, 0),
-                      ),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(30.0)),
-                      borderSide: BorderSide(
-                        color: Color.fromARGB(188, 209, 0, 0),
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(30.0)),
-                      borderSide: BorderSide(
-                        color: Color.fromARGB(188, 209, 0, 0),
-                      ),
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
-                    contentPadding: const EdgeInsets.symmetric(
-                      vertical: 16,
-                      horizontal: 24,
-                    ),
-                  ),
+                  labelText: 'Nama Produk',
                   validator: (value) {
                     if (value!.isEmpty) {
-                      return 'Please enter your product name';
+                      return 'Nama produk tidak boleh kosong';
                     }
                     return null;
                   },
                 ),
                 SizedBox(height: 16.0),
-                TextFormField(
+                CustomInputField(
                   controller: _descriptionController,
-                  keyboardType: TextInputType.text,
-                  decoration: InputDecoration(
-                    labelText: 'Description of Product',
-                    labelStyle:
-                        TextStyle(color: Colors.black, fontFamily: 'Poppins'),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(30.0)),
-                      borderSide: BorderSide(
-                        color: Color.fromARGB(188, 209, 0, 0),
-                      ),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(30.0)),
-                      borderSide: BorderSide(
-                        color: Color.fromARGB(188, 209, 0, 0),
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(30.0)),
-                      borderSide: BorderSide(
-                        color: Color.fromARGB(188, 209, 0, 0),
-                      ),
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
-                    contentPadding: const EdgeInsets.symmetric(
-                      vertical: 16,
-                      horizontal: 24,
-                    ),
-                  ),
+                  labelText: 'Deskripsi Produk',
                   validator: (value) {
                     if (value!.isEmpty) {
-                      return 'Please enter your description';
+                      return 'Deskripsi produk tidak boleh kosong';
                     }
                     return null;
                   },
                 ),
                 SizedBox(height: 16.0),
-                TextFormField(
+                CustomInputField(
                   controller: _priceController,
                   keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    labelText: 'Price of Product',
-                    labelStyle:
-                        TextStyle(color: Colors.black, fontFamily: 'Poppins'),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(30.0)),
-                      borderSide: BorderSide(
-                        color: Color.fromARGB(188, 209, 0, 0),
-                      ),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(30.0)),
-                      borderSide: BorderSide(
-                        color: Color.fromARGB(188, 209, 0, 0),
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(30.0)),
-                      borderSide: BorderSide(
-                        color: Color.fromARGB(188, 209, 0, 0),
-                      ),
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
-                    contentPadding: const EdgeInsets.symmetric(
-                      vertical: 16,
-                      horizontal: 24,
-                    ),
-                  ),
+                  labelText: 'Harga Produk',
                   validator: (value) {
                     if (value!.isEmpty) {
-                      return 'Please enter your price of product';
+                      return 'Harga produk tidak boleh kosong';
                     }
+
+                    var cleanedValue = value.replaceAll(RegExp(r'[Rp.,]'), '');
+                    // Remove "Rp.", comma (",") and any other characters
+
+                    if (cleanedValue.length == 1) {
+                      // Add leading zero if the input contains a single digit
+                      cleanedValue = '0' + cleanedValue;
+                    }
+
+                    final price = double.tryParse(cleanedValue);
+
+                    if (price == null || price <= 0) {
+                      return 'Harga produk tidak valid';
+                    }
+
                     return null;
                   },
                 ),
                 SizedBox(height: 16.0),
-                TextFormField(
+                CustomInputField(
                   controller: _stockController,
                   keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    labelText: 'Stock of Product',
-                    labelStyle:
-                        TextStyle(color: Colors.black, fontFamily: 'Poppins'),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(30.0)),
-                      borderSide: BorderSide(
-                        color: Color.fromARGB(188, 209, 0, 0),
-                      ),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(30.0)),
-                      borderSide: BorderSide(
-                        color: Color.fromARGB(188, 209, 0, 0),
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(30.0)),
-                      borderSide: BorderSide(
-                        color: Color.fromARGB(188, 209, 0, 0),
-                      ),
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
-                    contentPadding: const EdgeInsets.symmetric(
-                      vertical: 16,
-                      horizontal: 24,
-                    ),
-                  ),
+                  labelText: 'Stok Produk',
                   validator: (value) {
                     if (value!.isEmpty) {
-                      return 'Please enter your stock of product';
+                      return 'Stok produk tidak boleh kosong';
                     }
                     return null;
                   },
@@ -395,7 +326,7 @@ class _MenuScreenStateAdd extends State<MenuScreenAdd> {
                               ListTile(
                                 leading: Icon(Icons.camera,
                                     color: Colors.black), // Add icon
-                                title: Text('Take a photo',
+                                title: Text('Ambil foto',
                                     style: TextStyle(
                                         color: Colors.black)), // Add text style
                                 onTap: () {
@@ -406,7 +337,7 @@ class _MenuScreenStateAdd extends State<MenuScreenAdd> {
                               ListTile(
                                 leading: Icon(Icons.image,
                                     color: Colors.black), // Add icon
-                                title: Text('Choose from gallery',
+                                title: Text('Pilih dari galeri',
                                     style: TextStyle(
                                         color: Colors.black)), // Add text style
                                 onTap: () {
@@ -426,7 +357,7 @@ class _MenuScreenStateAdd extends State<MenuScreenAdd> {
                       Icon(Icons.photo, color: Colors.white), // Add icon
                       SizedBox(width: 8),
                       Text(
-                        'Choose Image',
+                        'Pilih Gambar',
                         style: TextStyle(fontFamily: 'Poppins'),
                       ),
                     ],
@@ -459,7 +390,7 @@ class _MenuScreenStateAdd extends State<MenuScreenAdd> {
                       Icon(Icons.add, color: Colors.white), // Add icon
                       SizedBox(width: 8),
                       Text(
-                        'Add Menu',
+                        'Tambah Produk',
                         style: TextStyle(fontFamily: 'Poppins'),
                       ),
                     ],
@@ -480,51 +411,8 @@ class _MenuScreenStateAdd extends State<MenuScreenAdd> {
           ),
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        showSelectedLabels: true,
-        items: <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.menu),
-            label: 'Menu',
-          ),
-          BottomNavigationBarItem(
-            icon: CircleAvatar(
-              backgroundColor: Color.fromARGB(188, 209, 0, 0),
-              radius: 30,
-              child: Icon(Icons.qr_code, color: Colors.white, size: 30),
-            ),
-            label: 'Payment',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.list_alt_outlined),
-            label: 'Order',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_2_outlined),
-            label: 'Account',
-          ),
-        ],
+      bottomNavigationBar: CustomBottomNavigationBar(
         currentIndex: _selectedIndex,
-        selectedItemColor: Color.fromARGB(188, 209, 0, 0),
-        unselectedItemColor: Colors.grey,
-        showUnselectedLabels: true,
-        selectedFontSize: 13.0,
-        unselectedFontSize: 13.0,
-        selectedLabelStyle: TextStyle(
-          fontFamily: 'Poppins',
-          fontSize: 16.0,
-          fontWeight: FontWeight.bold,
-        ),
-        unselectedLabelStyle: TextStyle(
-          fontFamily: 'Poppins',
-          fontSize: 14.0,
-          fontWeight: FontWeight.normal,
-        ),
         onTap: _onItemTapped,
       ),
     );

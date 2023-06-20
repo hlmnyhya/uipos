@@ -1,26 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:uipos2/mainmenu/home_screen.dart';
 import 'package:uipos2/mainmenu/menu_screen.dart';
-import 'package:uipos2/menu/menu_add_screen.dart';
-import 'package:uipos2/menu/menu_edit_screen.dart';
 import 'package:uipos2/mainmenu/payment_screen.dart';
-import 'package:uipos2/mainmenu/order_screen.dart';
 import 'package:uipos2/mainmenu/account_screen.dart';
-import 'package:http/http.dart' as http;
 import 'package:uipos2/transaction/transaction_screen.dart';
-import 'dart:convert';
-import '../cappbar.dart';
+import 'package:uipos2/theme/cappbar.dart';
 import 'package:blue_thermal_printer/blue_thermal_printer.dart';
-import 'package:flutter/material.dart';
 import 'dart:async';
-import 'package:blue_thermal_printer/blue_thermal_printer.dart';
 import 'package:flutter/services.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:uipos2/transaction/testprint.dart';
+import 'package:uipos2/theme/bottomnavbar.dart';
 
 class Print extends StatefulWidget {
-  const Print({super.key});
+  final int idtransaksi;
+  const Print({Key? key, required this.idtransaksi}) : super(key: key);
 
   @override
   State<Print> createState() => _PrintState();
@@ -32,7 +25,6 @@ class _PrintState extends State<Print> {
   List<BluetoothDevice> _devices = [];
   BluetoothDevice? _device;
   bool _connected = false;
-  TestPrint testPrint = TestPrint();
 
   @override
   void initState() {
@@ -66,48 +58,96 @@ class _PrintState extends State<Print> {
           setState(() {
             _connected = true;
             print("bluetooth device state: connected");
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                backgroundColor: Colors.green,
+                content: Text('Terhubung dengan printer'),
+              ),
+            );
           });
           break;
         case BlueThermalPrinter.DISCONNECTED:
           setState(() {
             _connected = false;
             print("bluetooth device state: disconnected");
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                backgroundColor: Colors.green,
+                content: Text('Printer terputus'),
+              ),
+            );
           });
           break;
         case BlueThermalPrinter.DISCONNECT_REQUESTED:
           setState(() {
             _connected = false;
             print("bluetooth device state: disconnect requested");
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                backgroundColor: Colors.red,
+                content: Text('Printer terputus'),
+              ),
+            );
           });
           break;
         case BlueThermalPrinter.STATE_TURNING_OFF:
           setState(() {
             _connected = false;
             print("bluetooth device state: bluetooth turning off");
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                backgroundColor: Colors.red,
+                content: Text('Printer terputus'),
+              ),
+            );
           });
           break;
         case BlueThermalPrinter.STATE_OFF:
           setState(() {
             _connected = false;
             print("bluetooth device state: bluetooth off");
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                backgroundColor: Colors.red,
+                content: Text('Printer tidak terhubung'),
+              ),
+            );
           });
           break;
         case BlueThermalPrinter.STATE_ON:
           setState(() {
             _connected = false;
             print("bluetooth device state: bluetooth on");
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                backgroundColor: Colors.green,
+                content: Text('Bluetooth aktif'),
+              ),
+            );
           });
           break;
         case BlueThermalPrinter.STATE_TURNING_ON:
           setState(() {
             _connected = false;
             print("bluetooth device state: bluetooth turning on");
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                backgroundColor: Colors.green,
+                content: Text('Bluetooth aktif'),
+              ),
+            );
           });
           break;
         case BlueThermalPrinter.ERROR:
           setState(() {
             _connected = false;
             print("bluetooth device state: error");
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                backgroundColor: Colors.red,
+                content: Text('Printer gagal terhubung'),
+              ),
+            );
           });
           break;
         default:
@@ -128,13 +168,52 @@ class _PrintState extends State<Print> {
     }
   }
 
+  int _selectedIndex = 3;
+  void _onItemTapped(int index) {
+    if (index == 0) {
+      // Navigasi ke MenuScreen
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => HomeScreen()),
+      );
+    }
+    if (index == 1) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => MenuScreen()),
+      );
+    }
+    if (index == 2) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => PaymentScreen()),
+      );
+    }
+    if (index == 3) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+            builder: (context) => TransactionScreen(
+                  idtransaksi: widget.idtransaksi,
+                )),
+      );
+    }
+    if (index == 4) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => AccountScreen()),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    TestPrint testPrint = TestPrint(idtransaksi: widget.idtransaksi);
     return Scaffold(
       appBar: CustomAppBar(
         title: 'Print',
-        breadcrumbItem: 'Print',
-        breadcrumbItem2: 'Payment',
+        breadcrumbItem: 'Perangkat',
+        breadcrumbItem2: 'Bluetooth',
       ),
       body: Padding(
         padding: const EdgeInsets.all(25),
@@ -146,7 +225,7 @@ class _PrintState extends State<Print> {
               children: <Widget>[
                 const SizedBox(width: 10),
                 const Text(
-                  'Device :',
+                  'Printer :',
                   style: TextStyle(
                     fontSize: 16,
                     fontFamily: 'Poppins',
@@ -201,12 +280,25 @@ class _PrintState extends State<Print> {
                     onPressed: () {
                       initPlatformState();
                     },
-                    child: const Text(
-                      'Refresh',
-                      style: TextStyle(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons
+                              .search, // Replace icon_name with the desired icon from the Icons class
                           color: Colors.white,
-                          fontSize: 14,
-                          fontFamily: 'Poppins'),
+                          size: 15,
+                        ),
+                        SizedBox(width: 8),
+                        Text(
+                          'Pindai',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontFamily: 'Poppins',
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -221,16 +313,30 @@ class _PrintState extends State<Print> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(50.0),
                       ),
-                      backgroundColor: Color.fromARGB(188, 209, 0, 0),
+                      backgroundColor: _connected
+                          ? Colors.green
+                          : Color.fromARGB(188, 209, 0, 0),
                       fixedSize: Size(150, 50),
                     ),
                     onPressed: _connected ? _disconnect : _connect,
-                    child: Text(
-                      _connected ? 'Disconnect' : 'Connect',
-                      style: TextStyle(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.bluetooth,
                           color: Colors.white,
-                          fontSize: 14,
-                          fontFamily: 'Poppins'),
+                          size: 15,
+                        ),
+                        SizedBox(width: 9),
+                        Text(
+                          _connected ? 'Putuskan' : 'Hubungkan',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontFamily: 'Poppins',
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -252,7 +358,14 @@ class _PrintState extends State<Print> {
                     fixedSize: Size(150, 50),
                   ),
                   onPressed: () {
-                    testPrint.sample();
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => TestPrint(
+                          idtransaksi: widget.idtransaksi,
+                        ),
+                      ),
+                    );
                   },
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -260,19 +373,24 @@ class _PrintState extends State<Print> {
                       Icon(Icons.print, color: Colors.white, size: 20),
                       SizedBox(width: 5),
                       Text(
-                        'PRINT RECEIPT',
+                        'Cetak Struk',
                         style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
-                            fontFamily: 'Poppins'),
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontFamily: 'Poppins',
+                        ),
                       ),
                     ],
                   ),
                 ),
               ),
-            )
+            ),
           ],
         ),
+      ),
+      bottomNavigationBar: CustomBottomNavigationBar(
+        currentIndex: _selectedIndex,
+        onTap: _onItemTapped,
       ),
     );
   }
@@ -281,7 +399,7 @@ class _PrintState extends State<Print> {
     List<DropdownMenuItem<BluetoothDevice>> items = [];
     if (_devices.isEmpty) {
       items.add(DropdownMenuItem(
-        child: Text('NONE'),
+        child: Text('Tidak ada perangkat'),
       ));
     } else {
       _devices.forEach((device) {

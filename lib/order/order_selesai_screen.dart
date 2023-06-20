@@ -1,44 +1,48 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/date_symbol_data_file.dart';
+import 'package:uipos2/signin_screen.dart';
+import 'package:uipos2/landing_page.dart';
+import 'package:uipos2/signup_screen.dart';
 import 'package:uipos2/theme/cappbar.dart';
 import 'package:uipos2/mainmenu/home_screen.dart';
 import 'package:uipos2/mainmenu/menu_screen.dart';
 import 'package:uipos2/mainmenu/payment_screen.dart';
+import 'package:uipos2/mainmenu/order_screen.dart';
 import 'package:uipos2/mainmenu/account_screen.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:uipos2/theme/bottomnavbar.dart';
 import 'package:intl/intl.dart';
 import '../order/order_detail_screen.dart';
+import 'package:uipos2/theme/bottomnavbar.dart';
 
-class OrderScreen extends StatefulWidget {
-  const OrderScreen({Key? key}) : super(key: key);
+class OrderSelesaiScreen extends StatefulWidget {
+  const OrderSelesaiScreen({Key? key}) : super(key: key);
 
   @override
-  State<OrderScreen> createState() => _OrderScreenState();
+  State<OrderSelesaiScreen> createState() => _OrderSelesaiScreenState();
 }
 
-class _OrderScreenState extends State<OrderScreen> {
+class _OrderSelesaiScreenState extends State<OrderSelesaiScreen> {
   String _formatDate(DateTime dateTime) {
     final formattedDate = '${dateTime.day}/${dateTime.month}/${dateTime.year}';
     return formattedDate;
   }
 
   Future<List<dynamic>> _fetchdatatemptrans() async {
-    var result =
-        await http.get(Uri.parse('https://api.couplemoment.com/transaksi'));
+    var result = await http
+        .get(Uri.parse('https://api.couplemoment.com/transaksi/trans/selesai'));
     var jsonData = json.decode(result.body);
     List<dynamic> dataList = jsonData['data'];
 
     // Iterate over the dataList and modify the necessary fields
     for (var data in dataList) {
       data['id_transaksi'] = data['id_transaksi'].toString();
+      data['id_customer'] = data['id_customer'].toString();
       data['total'] = data['total'].toString();
       data['bayar'] = data['bayar'].toString();
       data['kembali'] = data['kembali'].toString();
       data['status'] = data['status'].toString();
-      data['nama'] = data['name'].toString();
-      data['name'] = data['name'].toString();
-      // print(data);
       data['createdAt'] = DateTime.parse(data['createdAt']);
       data['updatedAt'] = DateTime.parse(data['updatedAt']);
     }
@@ -99,7 +103,7 @@ class _OrderScreenState extends State<OrderScreen> {
       appBar: CustomAppBar(
         title: 'Pesan',
         breadcrumbItem: 'Pesan',
-        breadcrumbItem2: 'Semua Pesanan',
+        breadcrumbItem2: 'Pesanan Selesai',
       ),
       body: FutureBuilder<List<dynamic>>(
         future: _fetchdatatemptrans(),
@@ -166,7 +170,6 @@ class _OrderScreenState extends State<OrderScreen> {
                                           Icons.cancel,
                                           color: Colors.red,
                                         ),
-                                      SizedBox(width: 8.0),
                                       Text(
                                         'Order #' + order.toString(),
                                         style: TextStyle(
@@ -195,7 +198,6 @@ class _OrderScreenState extends State<OrderScreen> {
                                       fontFamily: 'Poppins',
                                     ),
                                   ),
-                                  SizedBox(height: 4.0),
                                   Text(
                                     'Status: ${temptrans['status']}',
                                     style: TextStyle(

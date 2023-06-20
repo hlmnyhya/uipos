@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:uipos2/mainmenu/home_screen.dart';
 import 'package:uipos2/mainmenu/menu_screen.dart';
@@ -5,14 +6,16 @@ import 'package:uipos2/menu/menu_add_screen.dart';
 import 'package:uipos2/menu/menu_edit_screen.dart';
 import 'package:uipos2/mainmenu/payment_screen.dart';
 import 'package:uipos2/mainmenu/order_screen.dart';
-import '../cappbar.dart';
+import '../theme/cappbar.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:uipos2/theme/bottomnavbar.dart';
 
 class DetailScreen extends StatefulWidget {
+  final dynamic idProduct;
   final dynamic product;
 
-  DetailScreen({required this.product});
+  DetailScreen({required this.idProduct, required this.product});
 
   @override
   _DetailScreenState createState() => _DetailScreenState();
@@ -22,7 +25,8 @@ class _DetailScreenState extends State<DetailScreen> {
   int _selectedIndex = 1;
 
   Future<void> deleteMenu(String idProduct) async {
-    final url = Uri.parse('http://api.couplemoment.com/product/$idProduct');
+    final url =
+        Uri.parse('https://api.couplemoment.com/product/${widget.idProduct}');
 
     final response = await http.delete(url);
 
@@ -80,9 +84,9 @@ class _DetailScreenState extends State<DetailScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomAppBar(
-        title: 'Menu',
-        breadcrumbItem: 'Menu',
-        breadcrumbItem2: 'Detail Menu',
+        title: 'Produk',
+        breadcrumbItem: 'Produk',
+        breadcrumbItem2: 'Detail Produk',
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -97,8 +101,10 @@ class _DetailScreenState extends State<DetailScreen> {
                   width: MediaQuery.of(context).size.width,
                   height: MediaQuery.of(context).size.height * 0.4,
                   child: Image.network(
-                    "https://reqres.in/img/faces/3-image.jpg",
+                    widget.product['gambar'] ??
+                        'https://www.generationsforpeace.org/wp-content/uploads/2018/03/empty.jpg',
                     fit: BoxFit.cover,
+                    width: double.infinity,
                   ),
                 ),
               ),
@@ -122,12 +128,13 @@ class _DetailScreenState extends State<DetailScreen> {
                   ),
                   SizedBox(height: 8),
                   Text(
-                    'Price : Rp. ${widget.product['harga']},-'.toString(),
+                    'Harga : Rp. ${widget.product['harga']},-'.toString(),
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
+                  SizedBox(height: 8),
                   Text(
                     'Stok : ${widget.product['stok']}'.toString(),
                     style: TextStyle(
@@ -150,7 +157,8 @@ class _DetailScreenState extends State<DetailScreen> {
                         context,
                         MaterialPageRoute(
                           builder: (context) => MenuScreenEdit(
-                            idProduct: widget.product['id_product'].toString(),
+                            idProduct: widget.idProduct,
+                            product: widget.product,
                           ),
                         ),
                       );
@@ -160,7 +168,7 @@ class _DetailScreenState extends State<DetailScreen> {
                       size: 20,
                     ),
                     label: Text(
-                      'Edit Menu',
+                      'Ubah Produk',
                       style: TextStyle(fontFamily: 'Poppins'),
                     ),
                     style: ElevatedButton.styleFrom(
@@ -184,15 +192,15 @@ class _DetailScreenState extends State<DetailScreen> {
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(20),
                             ),
-                            title: const Text('Confirmation'),
+                            title: const Text('Konfirmasi Hapus'),
                             content: const Text(
-                                'Are you sure you want to delete this menu?'),
+                                'Apakah Anda yakin ingin menghapus produk ini?'),
                             actions: <Widget>[
                               TextButton(
                                 onPressed: () async {
                                   // Panggil fungsi untuk menghapus data
                                   await deleteMenu(
-                                      widget.product['id_product']);
+                                      widget.product['id_product']());
 
                                   // Tutup dialog konfirmasi
                                   Navigator.of(context).pop();
@@ -204,7 +212,7 @@ class _DetailScreenState extends State<DetailScreen> {
                                         builder: (context) => MenuScreen()),
                                   );
                                 },
-                                child: const Text('Delete',
+                                child: const Text('Hapus',
                                     style: TextStyle(color: Colors.red)),
                               ),
                               TextButton(
@@ -212,7 +220,7 @@ class _DetailScreenState extends State<DetailScreen> {
                                   // Tutup dialog konfirmasi
                                   Navigator.of(context).pop();
                                 },
-                                child: const Text('Cancel',
+                                child: const Text('Batal',
                                     style: TextStyle(color: Colors.red)),
                               ),
                             ],
@@ -225,7 +233,7 @@ class _DetailScreenState extends State<DetailScreen> {
                       size: 20,
                     ),
                     label: Text(
-                      'Delete Menu',
+                      'Hapus Produk',
                       style: TextStyle(fontFamily: 'Poppins'),
                     ),
                     style: ElevatedButton.styleFrom(
@@ -246,37 +254,8 @@ class _DetailScreenState extends State<DetailScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        showSelectedLabels: true,
-        items: <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.menu),
-            label: 'Menu',
-          ),
-          BottomNavigationBarItem(
-            icon: CircleAvatar(
-              backgroundColor: Color.fromARGB(188, 209, 0, 0),
-              radius: 30,
-              child: Icon(Icons.qr_code, color: Colors.white, size: 30),
-            ),
-            label: 'Payment',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.list_alt_outlined),
-            label: 'Order',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_2_outlined),
-            label: 'Account',
-          ),
-        ],
+      bottomNavigationBar: CustomBottomNavigationBar(
         currentIndex: _selectedIndex,
-        selectedItemColor: Color.fromARGB(188, 209, 0, 0),
         onTap: _onItemTapped,
       ),
     );

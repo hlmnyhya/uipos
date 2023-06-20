@@ -1,14 +1,19 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:uipos2/signin_screen.dart';
 import 'package:uipos2/landing_page.dart';
 import 'package:uipos2/signup_screen.dart';
-import 'package:uipos2/cappbar.dart';
+import 'package:uipos2/theme/cappbar.dart';
 import 'package:uipos2/mainmenu/home_screen.dart';
 import 'package:uipos2/mainmenu/menu_screen.dart';
 import 'package:uipos2/mainmenu/payment_screen.dart';
 import 'package:uipos2/mainmenu/order_screen.dart';
 import 'package:uipos2/mainmenu/account_screen.dart';
 import 'package:uipos2/mainmenu/edit_account_screen.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:uipos2/theme/bottomnavbar.dart';
 
 class AccountScreen extends StatefulWidget {
   const AccountScreen({Key? key}) : super(key: key);
@@ -18,6 +23,24 @@ class AccountScreen extends StatefulWidget {
 }
 
 class _AccountScreenState extends State<AccountScreen> {
+  final storage = FlutterSecureStorage();
+
+  Future<void> signout(BuildContext context) async {
+    var url = Uri.parse('https://couplemoment.com/user/logout');
+    var response = await http.post(url);
+
+    if (response.statusCode == 200) {
+      await storage.delete(key: 'token');
+      Route route = MaterialPageRoute(builder: (context) => LandingPage());
+    } else {
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => LandingPage()),
+        (Route<dynamic> route) => false,
+      );
+    }
+  }
+
   int _selectedIndex = 4;
 
   Future<Widget> get child async => GridView.count(
@@ -69,16 +92,16 @@ class _AccountScreenState extends State<AccountScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomAppBar(
-        title: 'Account',
-        breadcrumbItem: 'Profile',
-        breadcrumbItem2: 'Account',
+        title: 'Akun',
+        breadcrumbItem: 'Profil',
+        breadcrumbItem2: 'Akun',
       ),
       body: SingleChildScrollView(
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              SizedBox(height: 20),
+              SizedBox(height: 30),
               CircleAvatar(
                 radius: 50,
                 backgroundImage: AssetImage('assets/images/Scooter.png'),
@@ -89,20 +112,22 @@ class _AccountScreenState extends State<AccountScreen> {
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
+                  fontFamily: 'Poppins',
                 ),
               ),
               Text(
                 'olseller@customer.com',
-                style: TextStyle(fontSize: 16),
+                style: TextStyle(fontSize: 16, fontFamily: 'Poppins'),
               ),
+              SizedBox(height: 10),
               EditAccountForm(),
               SizedBox(height: 10),
               ElevatedButton(
                 onPressed: () {
-                  // Logic for saving the account details
+                  signout(context);
                 },
                 child: Text(
-                  'Save',
+                  'Keluar',
                   style: TextStyle(fontFamily: 'Poppins'),
                 ),
                 style: ElevatedButton.styleFrom(
@@ -112,46 +137,6 @@ class _AccountScreenState extends State<AccountScreen> {
                     borderRadius: BorderRadius.circular(30.0),
                   ),
                   backgroundColor: Color.fromARGB(188, 209, 0, 0),
-                  fixedSize: Size(300, 50),
-                ),
-              ),
-              SizedBox(height: 10),
-              ElevatedButton(
-                onPressed: () {},
-                child: Text(
-                  'Connect to Bluetooth',
-                  style: TextStyle(fontFamily: 'Poppins'),
-                ),
-                style: ElevatedButton.styleFrom(
-                  padding: EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-                  minimumSize: Size(300, 50),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30.0),
-                  ),
-                  backgroundColor: Color.fromARGB(188, 209, 0, 0),
-                  fixedSize: Size(300, 50),
-                ),
-              ),
-              SizedBox(height: 10),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(builder: (context) => LandingPage()),
-                    (Route<dynamic> route) => false,
-                  );
-                },
-                child: Text(
-                  'Sign Out',
-                  style: TextStyle(fontFamily: 'Poppins'),
-                ),
-                style: ElevatedButton.styleFrom(
-                  padding: EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-                  minimumSize: Size(300, 50),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30.0),
-                  ),
-                  backgroundColor: Color.fromARGB(188, 255, 208, 0),
                   fixedSize: Size(300, 50),
                 ),
               ),
@@ -159,54 +144,8 @@ class _AccountScreenState extends State<AccountScreen> {
           ),
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        // tetap tampil sejumlah item
-        showSelectedLabels: true,
-        // menyembunyikan label yang dipilih
-        // showUnselectedLabels: false, // menyembunyikan label yang tidak dipilih
-        items: <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.menu),
-            label: 'Menu',
-          ),
-          BottomNavigationBarItem(
-            icon: CircleAvatar(
-              backgroundColor: Color.fromARGB(188, 209, 0, 0),
-              radius: 30,
-              child: Icon(Icons.qr_code, color: Colors.white, size: 30),
-            ),
-            label: 'Payment',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.list_alt_outlined),
-            label: 'Order',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_2_outlined),
-            label: 'Account',
-          ),
-        ],
+      bottomNavigationBar: CustomBottomNavigationBar(
         currentIndex: _selectedIndex,
-        selectedItemColor: Color.fromARGB(188, 209, 0, 0),
-        unselectedItemColor: Colors.grey,
-        showUnselectedLabels: true,
-        selectedFontSize: 13.0,
-        unselectedFontSize: 13.0,
-        selectedLabelStyle: TextStyle(
-          fontFamily: 'Poppins',
-          fontSize: 16.0,
-          fontWeight: FontWeight.bold,
-        ),
-        unselectedLabelStyle: TextStyle(
-          fontFamily: 'Poppins',
-          fontSize: 14.0,
-          fontWeight: FontWeight.normal,
-        ),
         onTap: _onItemTapped,
       ),
     );

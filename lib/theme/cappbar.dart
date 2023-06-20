@@ -18,7 +18,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      backgroundColor: Color.fromARGB(255, 228, 171, 0),
+      backgroundColor: const Color.fromARGB(255, 228, 171, 0),
       elevation: 0,
       centerTitle: false,
       titleSpacing: 30,
@@ -35,7 +35,10 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
           SizedBox(height: 15),
           Text(
             title,
-            style: TextStyle(fontSize: 20, fontFamily: 'Poppins'),
+            style: TextStyle(
+                fontSize: 20,
+                fontFamily: 'Poppins',
+                fontWeight: FontWeight.bold),
           ),
           Row(
             children: [

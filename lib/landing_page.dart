@@ -3,6 +3,8 @@ import 'package:uipos2/signin_screen.dart';
 // import 'package:uipos2/landing_page.dart';
 import 'package:uipos2/signup_screen.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:uipos2/theme/cappbar.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   runApp(const LandingPage());
@@ -85,7 +87,7 @@ class LandingPage extends StatelessWidget {
                   );
                 },
                 child: const Text(
-                  'Sign In',
+                  'Masuk',
                   style: TextStyle(fontFamily: 'Poppins'),
                 ),
                 style: ElevatedButton.styleFrom(
@@ -107,7 +109,7 @@ class LandingPage extends StatelessWidget {
                   );
                 },
                 child: const Text(
-                  'Sign Up',
+                  'Daftar',
                   style: TextStyle(fontFamily: 'Poppins'),
                 ),
                 style: ElevatedButton.styleFrom(

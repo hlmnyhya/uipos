@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:uipos2/mainmenu/home_screen.dart';
@@ -8,27 +9,39 @@ import 'package:uipos2/mainmenu/payment_screen.dart';
 import 'package:uipos2/mainmenu/order_screen.dart';
 import 'package:uipos2/mainmenu/account_screen.dart';
 import 'package:http/http.dart' as http;
+import 'package:uipos2/transaction/print.dart';
 import 'package:uipos2/transaction/transaction_screen.dart';
 import 'dart:convert';
-import '../cappbar.dart';
+import '../theme/cappbar.dart';
+import 'package:uipos2/mainmenu/snap_screen.dart';
+import 'package:uipos2/theme/bottomnavbar.dart';
 
 class OrderDetailScreen extends StatefulWidget {
   final int idtransaksi;
 
-  const OrderDetailScreen({Key? key, required this.idtransaksi})
-      : super(key: key);
+  const OrderDetailScreen({
+    Key? key,
+    required this.idtransaksi,
+  }) : super(key: key);
 
   @override
   _OrderDetailScreenState createState() => _OrderDetailScreenState();
 }
 
 class _OrderDetailScreenState extends State<OrderDetailScreen> {
+  int? idtemptrans;
   int? qty = 0;
   int? harga = 0;
   int? stok = 0;
   String? id_customer = "";
-  String? createdAt = "";
+  String? createdAt;
   String? nama = "";
+  String? kode_customer = "";
+
+  String _formatDate(DateTime dateTime) {
+    final formattedDate = '${dateTime.day}/${dateTime.month}/${dateTime.year}';
+    return formattedDate;
+  }
 
   List<dynamic> transactionData = [];
 
@@ -39,7 +52,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   }
 
   Future<void> fetchTransactionData() async {
-    var url = Uri.parse('http://192.168.1.8:3000/temptransaksi');
+    var url = Uri.parse(
+        'https://api.couplemoment.com/temptransaksi/${widget.idtransaksi}');
     var response = await http.get(url);
 
     if (response.statusCode == 200) {
@@ -47,8 +61,20 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
 
       setState(() {
         transactionData = data['data'];
+
+        print(transactionData);
       });
     }
+  }
+
+  void goToPrintScreen() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            TransactionScreen(idtransaksi: widget.idtransaksi),
+      ),
+    );
   }
 
   int _selectedIndex = 3;
@@ -70,8 +96,10 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         MaterialPageRoute(builder: (context) => PaymentScreen()),
       );
     } else if (index == 3) {
-      // No need to navigate to the same screen
-      return;
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => OrderScreen()),
+      );
     } else if (index == 4) {
       Navigator.push(
         context,
@@ -89,15 +117,16 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     int? quantity;
     String? productName;
     int? price;
+    int order = 1;
     return Scaffold(
       appBar: CustomAppBar(
-        title: 'Order',
-        breadcrumbItem: 'Order',
-        breadcrumbItem2: 'Order Detail',
+        title: 'Pesan',
+        breadcrumbItem: 'Pesan',
+        breadcrumbItem2: 'Detail Pesanan',
       ),
       body: SingleChildScrollView(
         child: Padding(
-          padding: EdgeInsets.all(20.0),
+          padding: EdgeInsets.symmetric(horizontal: 18.0, vertical: 6.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -118,33 +147,24 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Order #${widget.idtransaksi}',
+                              'Order #' + order.toString(),
                               style: TextStyle(
                                 fontFamily: 'Poppins',
                                 fontSize: 16.0,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            Text(
-                              'ID Customer: $id_customer',
-                              style: TextStyle(
-                                fontFamily: 'Poppins',
-                                fontSize: 12.0,
-                              ),
+                            SizedBox(
+                              height: 5.0,
                             ),
                             Text(
-                              'Invoice: INV/${widget.idtransaksi}/${widget.idtransaksi + 1}/${DateFormat("ddMMyy").format(DateTime.now())}',
-                              style: TextStyle(
-                                color: Colors.black,
-                                fontFamily: 'Poppins',
-                              ),
+                              'Invoice: ${widget.idtransaksi.toString()}/${DateFormat('dd/mm/yyyy').format(DateTime.now())}',
+                            ),
+                            SizedBox(
+                              height: 5.0,
                             ),
                             Text(
-                              'Date: $createdAt',
-                              style: TextStyle(
-                                fontFamily: 'Poppins',
-                                fontSize: 12.0,
-                              ),
+                              'Tanggal: ${DateFormat('dd/mm/yyyy').format(DateTime.now())}',
                             ),
                           ],
                         ),
@@ -162,146 +182,251 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                   ),
                 ),
               ),
-              Container(
-                width: 400,
-                height: 200,
-                padding: EdgeInsets.all(10.0),
-                child: GridView.builder(
-                  scrollDirection: Axis.horizontal,
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 1,
-                    crossAxisSpacing: 15.0,
-                    mainAxisSpacing: 15.0,
-                  ),
-                  itemCount: transactionData.length,
-                  itemBuilder: (context, index) {
-                    var transaction = transactionData[index];
-                    int quantity = transaction['qty'];
-                    String productName = transaction['nama'] ?? 'Unknown';
-                    int price = transaction['harga'];
-                    int totalProduct = quantity * price;
-
-                    return Card(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20.0),
-                      ),
-                      child: Padding(
-                        padding: EdgeInsets.all(5.0),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Image.network(
-                              'https://reqres.in/img/faces/7-image.jpg',
-                              fit: BoxFit.cover,
-                              width: 200,
-                              height: 50,
+              SizedBox(
+                height: 20.0,
+              ),
+              if (transactionData.isEmpty && transactionData.length == 0)
+                Container(
+                  width: double.infinity,
+                  child: Card(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10.0),
+                    ),
+                    color: Colors.grey[300],
+                    elevation: 2.0,
+                    child: Padding(
+                      padding: EdgeInsets.all(20.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Keranjang Kosong',
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: 16.0,
+                              fontWeight: FontWeight.bold,
                             ),
-                            Text(
-                              '$productName',
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              if (transactionData.isNotEmpty && transactionData.length > 0)
+                Container(
+                  width: 400,
+                  height: 200,
+                  padding: EdgeInsets.all(10.0),
+                  child: GridView.builder(
+                    scrollDirection: Axis.horizontal,
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 1,
+                      crossAxisSpacing: 15.0,
+                      mainAxisSpacing: 15.0,
+                    ),
+                    itemCount: transactionData.length,
+                    itemBuilder: (context, index) {
+                      var transaction = transactionData[index];
+                      int id_transaksi = transaction['id_transaksi'];
+                      int quantity = transaction['qty'];
+                      String? gambar = transaction['gambar'];
+                      String productName = transaction['nama'] ?? 'Unknown';
+                      int price = transaction['harga'];
+                      int totalProduct = quantity * price;
+
+                      return Card(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20.0),
+                        ),
+                        child: Padding(
+                          padding: EdgeInsets.all(5.0),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Image.network(
+                                // '$gambar' ??
+                                'https://www.generationsforpeace.org/wp-content/uploads/2018/03/empty.jpg',
+                                fit: BoxFit.cover,
+                                width: 200,
+                                height: 50,
+                              ),
+                              Text(
+                                '$productName',
+                                style: TextStyle(
+                                  fontFamily: 'Poppins',
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Text(
+                                'Qty: $quantity',
+                                style: TextStyle(fontFamily: 'Poppins'),
+                              ),
+                              Text(
+                                'Harga: Rp. $totalProduct,-',
+                                style: TextStyle(fontFamily: 'Poppins'),
+                              ),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  ElevatedButton(
+                                    onPressed: () async {
+                                      // Make a DELETE request to the API
+                                      final response = await http.delete(
+                                        Uri.parse(
+                                            'https://api.couplemoment.com/temptransaksi/${transaction['id_temp_trans']}'),
+                                      );
+
+                                      // Check if the request was successful
+                                      if (response.statusCode == 200) {
+                                        // Update the UI or perform any other necessary actions
+                                        setState(() {
+                                          // Remove the deleted transaction from the list
+                                          transactionData.removeAt(index);
+                                        });
+                                      } else {
+                                        // Handle the error case
+                                        print(
+                                            'Failed to delete the transaction.');
+                                      }
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      shape: CircleBorder(),
+                                      padding: EdgeInsets.all(5.0),
+                                      primary: Colors.red,
+                                    ),
+                                    child: Icon(
+                                      Icons.delete,
+                                      size: 20,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              if (transactionData.isNotEmpty && transactionData.length > 0)
+                Row(
+                  children: [
+                    Expanded(
+                      child: DataTable(
+                        columns: <DataColumn>[
+                          DataColumn(
+                            label: Text(
+                              "Nama",
                               style: TextStyle(
                                 fontFamily: 'Poppins',
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            Text(
-                              'Qty: $quantity',
-                              style: TextStyle(fontFamily: 'Poppins'),
+                          ),
+                          DataColumn(
+                            label: Text(
+                              "Qty",
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                            Text(
-                              'Harga: Rp. $totalProduct,-',
-                              style: TextStyle(fontFamily: 'Poppins'),
+                          ),
+                          DataColumn(
+                            label: Text(
+                              "Harga",
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                ElevatedButton(
-                                  onPressed: () {
-                                    setState(() {
-                                      if (quantity > 0) {
-                                        quantity--;
-                                      }
-                                    });
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    shape: CircleBorder(),
-                                    padding: EdgeInsets.all(5.0),
-                                    primary: Colors.red,
-                                  ),
-                                  child: Icon(
-                                    Icons.delete,
-                                    size: 20,
-                                  ),
-                                ),
+                          ),
+                          DataColumn(
+                            label: Text(
+                              "Total",
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                        rows: [
+                          ...transactionData.map<DataRow>((transaction) {
+                            int quantity = transaction['qty'];
+                            String productName =
+                                transaction['nama'] ?? 'Unknown';
+                            int price = transaction['harga'];
+                            int totalProduct = quantity * price;
+
+                            return DataRow(
+                              cells: <DataCell>[
+                                DataCell(Text('$productName',
+                                    style: TextStyle(fontFamily: 'Poppins'))),
+                                DataCell(Text('$quantity',
+                                    style: TextStyle(fontFamily: 'Poppins'))),
+                                DataCell(Text('$price',
+                                    style: TextStyle(fontFamily: 'Poppins'))),
+                                DataCell(Text('$totalProduct',
+                                    style: TextStyle(fontFamily: 'Poppins'))),
                               ],
-                            ),
-                          ],
-                        ),
+                            );
+                          }),
+                          DataRow(
+                            cells: <DataCell>[
+                              DataCell(Text('Total',
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontFamily: 'Poppins'))),
+                              DataCell(Text('')),
+                              DataCell(Text('')),
+                              DataCell(Text(
+                                '${transactionData.fold(0, (sum, transaction) => sum + (transaction['harga'] as num).toInt() * (transaction['qty'] as num).toInt()).toInt()}',
+                                style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontFamily: 'Poppins'),
+                              )),
+                            ],
+                          ),
+                        ],
                       ),
-                    );
-                  },
-                ),
-              ),
-              Row(
-                children: [
-                  Expanded(
-                    child: DataTable(
-                      columns: <DataColumn>[
-                        DataColumn(
-                          label: Text(
-                            "Product",
-                            style: TextStyle(
-                              fontFamily: 'Poppins',
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                        DataColumn(
-                          label: Text(
-                            "Qty",
-                            style: TextStyle(
-                              fontFamily: 'Poppins',
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                        DataColumn(
-                          label: Text(
-                            "Price",
-                            style: TextStyle(
-                              fontFamily: 'Poppins',
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ],
-                      rows: <DataRow>[
-                        DataRow(
-                          cells: <DataCell>[
-                            DataCell(Text('Caramel Macchiato')),
-                            DataCell(Text('3')),
-                            DataCell(Text('90000')),
-                          ],
-                        ),
-                        DataRow(
-                          cells: <DataCell>[
-                            DataCell(Text('Babu')),
-                            DataCell(Text('1')),
-                            DataCell(Text('12000')),
-                          ],
-                        ),
-                      ],
                     ),
-                  ),
-                ],
-              ),
+                  ],
+                ),
               SizedBox(height: 20.0),
+              // if (transactionData.isNotEmpty && transactionData.length > 0)
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   ElevatedButton(
-                    onPressed: () {
-                      // Add cancel logic here
+                    onPressed: () async {
+                      final response = await http.delete(
+                        Uri.parse(
+                            'https://api.couplemoment.com/temptransaksi/deleteall/${widget.idtransaksi}'),
+                      );
+
+                      if (response.statusCode == 200) {
+                        // Show a SnackBar with a success message
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Transaction canceled.'),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+                        // Update the UI or perform any other necessary actions
+                        // ...
+                      } else {
+                        // Show a SnackBar with an error message
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Failed to cancel transaction.'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                        // Handle the error case
+                        print('Failed to delete data from temp_trans.');
+                      }
                     },
                     style: ElevatedButton.styleFrom(
                       padding:
@@ -314,7 +439,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                       fixedSize: Size(150, 50),
                     ),
                     child: Text(
-                      'Cancel',
+                      'Batal',
                       style: TextStyle(
                         color: Colors.white,
                         fontFamily: 'Poppins',
@@ -333,9 +458,9 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                               borderRadius: BorderRadius.circular(10.0),
                             ),
                             title: Text(
-                              'Select Payment Method',
+                              'Metode Pembayaran',
                               style: TextStyle(
-                                fontSize: 20,
+                                fontSize: 16,
                                 fontWeight: FontWeight.w500,
                                 color: Colors.black,
                                 fontFamily: 'Poppins',
@@ -348,11 +473,12 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                                 children: [
                                   ElevatedButton(
                                     onPressed: () async {
+                                      goToPrintScreen();
                                       // Add cash payment logic here
                                       Navigator.pop(context);
 
                                       var apiUrl = Uri.parse(
-                                          'http://192.168.1.8:3000/detailtransaksi/add');
+                                          'https://api.couplemoment.com/detailtransaksi/add');
                                       var requestBody = {
                                         // Provide the required data for the API call
                                         // Example: 'key': 'value'
@@ -361,18 +487,38 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                                           body: requestBody);
 
                                       if (response.statusCode == 200) {
-                                        // Successful API call, handle the response
-                                        print(response.body);
-                                        // Add your desired logic here
+                                        // Show a SnackBar with a success message
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                                'Transaction has been checkout.'),
+                                            backgroundColor: Colors.green,
+                                          ),
+                                        );
+                                        // Update the UI or perform any other necessary actions
+                                        // ...
                                       } else {
-                                        // Error occurred during the API call
-                                        // Handle the error
+                                        // Show a SnackBar with an error message
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                                'Failed to checkout transaction.'),
+                                            backgroundColor: Colors.red,
+                                          ),
+                                        );
+                                        // Handle the error case
+                                        print(
+                                            'Failed to delete data from temp_trans.');
                                       }
                                       Navigator.push(
                                         context,
                                         MaterialPageRoute(
                                           builder: (context) =>
-                                              TransactionScreen(),
+                                              TransactionScreen(
+                                                  idtransaksi:
+                                                      widget.idtransaksi),
                                         ),
                                       );
                                     },
@@ -386,63 +532,69 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                                           vertical: 16, horizontal: 24),
                                       minimumSize: Size(200, 50),
                                     ),
-                                    child: Text(
-                                      'Cash',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontFamily: 'Poppins',
-                                        fontSize: 14.0,
-                                      ),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.monetization_on,
+                                          color: Colors.white,
+                                          size: 18.0,
+                                        ),
+                                        SizedBox(width: 5.0),
+                                        Text(
+                                          'Tunai',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontFamily: 'Poppins',
+                                            fontSize: 14.0,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
                                   SizedBox(height: 16.0),
                                   ElevatedButton(
-                                    onPressed: () async {
-                                      // Add cash payment logic here
+                                    onPressed: () {
                                       Navigator.pop(context);
-
-                                      var apiUrl = Uri.parse(
-                                          'http://192.168.1.8:3000/detailtransaksi/add');
-                                      var requestBody = {
-                                        // Provide the required data for the API call
-                                        // Example: 'key': 'value'
-                                      };
-                                      var response = await http.post(apiUrl,
-                                          body: requestBody);
-
-                                      if (response.statusCode == 200) {
-                                        // Successful API call, handle the response
-                                        print(response.body);
-                                        // Add your desired logic here
-                                      } else {
-                                        // Error occurred during the API call
-                                        // Handle the error
-                                      }
                                       Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) =>
-                                              TransactionScreen(),
-                                        ),
-                                      );
+                                          context,
+                                          MaterialPageRoute(
+                                              builder: (context) =>
+                                                  MidtransSnapScreen(
+                                                    idtransaksi:
+                                                        widget.idtransaksi,
+                                                  )));
                                     },
                                     style: ElevatedButton.styleFrom(
                                       shape: RoundedRectangleBorder(
                                         borderRadius:
                                             BorderRadius.circular(30.0),
                                       ),
-                                      primary: Colors.grey[400],
+                                      primary: Color.fromARGB(188, 209, 0, 0),
                                       padding: EdgeInsets.symmetric(
                                           vertical: 16, horizontal: 24),
                                       minimumSize: Size(200, 50),
                                     ),
-                                    child: Text(
-                                      'Online Payment',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontFamily: 'Poppins',
-                                        fontSize: 14.0,
-                                      ),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.smartphone,
+                                          color: Colors.white,
+                                          size: 18.0,
+                                        ),
+                                        SizedBox(width: 5.0),
+                                        Text(
+                                          'Online',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontFamily: 'Poppins',
+                                            fontSize: 14.0,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 ],
@@ -463,7 +615,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                       fixedSize: Size(150, 50),
                     ),
                     child: Text(
-                      'Checkout',
+                      'Bayar',
                       style: TextStyle(
                         color: Colors.white,
                         fontFamily: 'Poppins',
@@ -477,41 +629,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           ),
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        showSelectedLabels: true,
-        items: <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.menu),
-            label: 'Menu',
-          ),
-          BottomNavigationBarItem(
-            icon: CircleAvatar(
-              backgroundColor: Color.fromARGB(188, 209, 0, 0),
-              radius: 30,
-              child: Icon(Icons.qr_code, color: Colors.white, size: 30),
-            ),
-            label: 'Payment',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.list_alt_outlined),
-            label: 'Order',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_2_outlined),
-            label: 'Account',
-          ),
-        ],
+      bottomNavigationBar: CustomBottomNavigationBar(
         currentIndex: _selectedIndex,
-        selectedItemColor: Color.fromARGB(188, 209, 0, 0),
-        unselectedItemColor: Colors.grey,
-        showUnselectedLabels: true,
-        selectedFontSize: 13.0,
-        unselectedFontSize: 13.0,
         onTap: _onItemTapped,
       ),
     );

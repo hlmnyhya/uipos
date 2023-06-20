@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:uipos2/mainmenu/home_screen.dart';
-import 'package:uipos2/landing_page.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:jwt_decoder/jwt_decoder.dart';
 
 class SignInPage extends StatefulWidget {
   const SignInPage({Key? key}) : super(key: key);
@@ -13,6 +16,91 @@ class _SignInPageState extends State<SignInPage> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+
+  final storage = FlutterSecureStorage();
+
+  Future<void> login(BuildContext context) async {
+    if (_formKey.currentState!.validate()) {
+      String email = _emailController.text;
+      String password = _passwordController.text;
+
+      Map<String, dynamic> requestBody = {
+        'email': email,
+        'password': password,
+      };
+
+      var url = Uri.parse('https://couplemoment.com/user/login');
+
+      var response = await http.post(url, body: requestBody);
+
+      if (response.statusCode == 200) {
+        var responseData = json.decode(response.body);
+        String? token = responseData['token'];
+
+        if (token != null) {
+          // Token berhasil dibaca, tambahkan token ke header authorization
+          Map<String, String> headers = {
+            'Authorization': 'Bearer $token',
+          };
+
+          // Kirim permintaan dengan header authorization
+          var authenticatedResponse =
+              await http.post(url, body: requestBody, headers: headers);
+
+          // Token berhasil dibaca, Anda dapat menggunakan jwt_decoder untuk mendekode token
+          print('Token: $token');
+
+          // Simpan token ke penyimpanan yang aman
+          await storage.write(key: 'token', value: token);
+          // Baca kembali token dari penyimpanan
+          String? storedToken = await storage.read(key: 'token');
+
+          if (storedToken != null) {
+            // Token berhasil dibaca dari penyimpanan
+            print('Stored Token: $storedToken');
+
+            // Decode token menggunakan jwt_decoder
+            Map<String, dynamic> decodedToken = JwtDecoder.decode(storedToken);
+            int? userId = decodedToken['id'];
+            print(decodedToken);
+
+            if (userId != null) {
+              // Contoh: Menggunakan userId dalam logika aplikasi
+              print('User ID: $userId');
+            } else {
+              // UserID tidak ditemukan dalam token
+              print('User ID not found in token');
+            }
+          } else {
+            // Token tidak ditemukan di penyimpanan
+            print('Token not found in storage');
+          }
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => HomeScreen()),
+          );
+          print('Token found');
+        }
+      } else {
+        // Login failed
+        var errorMessage = 'Failed to login account';
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => SignInPage()),
+        );
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            duration: Duration(seconds: 2),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +121,7 @@ class _SignInPageState extends State<SignInPage> {
           children: [
             const SizedBox(height: 10),
             const Text(
-              'Sign In!',
+              'Masuk',
               style: TextStyle(
                   fontSize: 20, color: Colors.black, fontFamily: 'Poppins'),
             ),
@@ -91,6 +179,7 @@ class _SignInPageState extends State<SignInPage> {
                             TextFormField(
                               controller: _emailController,
                               keyboardType: TextInputType.emailAddress,
+                              cursorColor: Colors.red,
                               decoration: InputDecoration(
                                 labelText: 'Email',
                                 labelStyle: TextStyle(
@@ -126,7 +215,7 @@ class _SignInPageState extends State<SignInPage> {
                               ),
                               validator: (value) {
                                 if (value!.isEmpty) {
-                                  return 'Please enter your email';
+                                  return 'Email tidak boleh kosong';
                                 }
                                 return null;
                               },
@@ -135,6 +224,7 @@ class _SignInPageState extends State<SignInPage> {
                             TextFormField(
                               controller: _passwordController,
                               obscureText: true,
+                              cursorColor: Colors.red,
                               decoration: InputDecoration(
                                 labelText: 'Password',
                                 labelStyle: TextStyle(
@@ -170,7 +260,7 @@ class _SignInPageState extends State<SignInPage> {
                               ),
                               validator: (value) {
                                 if (value!.isEmpty) {
-                                  return 'Please enter your password';
+                                  return 'Password tidak boleh kosong';
                                 }
                                 return null;
                               },
@@ -178,22 +268,12 @@ class _SignInPageState extends State<SignInPage> {
                             const SizedBox(height: 30),
                             ElevatedButton(
                               onPressed: () {
-                                if (_formKey.currentState!.validate()) {
-                                  // Aksi saat tombol "Sign In" ditekan
-                                  String email = _emailController.text;
-                                  String password = _passwordController.text;
-                                  print('Email: $email');
-                                  print('Password: $password');
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) =>
-                                            const HomeScreen()),
-                                  );
-                                }
+                                print(_emailController.text);
+                                print(_passwordController.text);
+                                login(context);
                               },
                               child: const Text(
-                                'Sign In',
+                                'Masuk',
                                 style: TextStyle(fontFamily: 'Poppins'),
                               ),
                               style: ElevatedButton.styleFrom(
